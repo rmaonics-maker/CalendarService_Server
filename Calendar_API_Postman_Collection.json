@@ -1,0 +1,304 @@
+{
+	"info": {
+		"_postman_id": "b3e64807-6586-4f9e-9764-162873104615",
+		"name": "Calendar API (Week 8 - Fixed)",
+		"description": "Исправленная коллекция. Использует require('uuid') для генерации ключей.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Create Event (Success)",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Надежная генерация UUID через встроенную библиотеку",
+							"const uuid = require('uuid');",
+							"pm.collectionVariables.set(\"currentIdempotencyKey\", uuid.v4());",
+							"",
+							"console.log(\"Generated Key for Test 1: \" + pm.collectionVariables.get(\"currentIdempotencyKey\"));"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"if (pm.response.code === 201) {",
+							"    var jsonData = pm.response.json();",
+							"    pm.collectionVariables.set(\"createdEventId\", jsonData.id);",
+							"    console.log(\"Created Event ID: \" + jsonData.id);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Idempotency-Key",
+						"value": "{{currentIdempotencyKey}}",
+						"description": "Unique key to prevent duplicate processing"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"Architectural Review\",\n  \"description\": \"Reviewing EF Core Migration Strategy\",\n  \"startTime\": \"2026-06-15T14:00:00Z\",\n  \"duration\": \"01:00:00\",\n  \"location\": \"Meeting Room 1\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/events",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"events"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2. Create Conflict (Expect 409)",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Генерируем НОВЫЙ ключ.",
+							"// Если мы пошлем старый ключ, сервер вернет 201 (Идемпотентность).",
+							"// А нам нужно проверить Овербукинг (Конфликт в БД).",
+							"const uuid = require('uuid');",
+							"pm.collectionVariables.set(\"currentIdempotencyKey\", uuid.v4());",
+							"",
+							"console.log(\"Generated Key for Test 2: \" + pm.collectionVariables.get(\"currentIdempotencyKey\"));"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 409 Conflict\", function () {",
+							"    pm.response.to.have.status(409);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Idempotency-Key",
+						"value": "{{currentIdempotencyKey}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"Architectural Review DUPLICATE\",\n  \"description\": \"Trying to book same time slot\",\n  \"startTime\": \"2026-06-15T14:15:00Z\",\n  \"duration\": \"00:30:00\",\n  \"location\": \"Meeting Room 1\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/events",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"events"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3. Get All Occurrences",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Body contains events\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to. be.an('array');",
+							"    // Проверяем, что хотя бы один элемент есть",
+							"    pm.expect(jsonData.length).to.be.above(0);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/events/occurrences?from=2026-06-15T00:00:00Z&to=2026-06-15T23:59:59Z",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"events",
+						"occurrences"
+					],
+					"query": [
+						{
+							"key": "from",
+							"value": "2026-06-15T00:00:00Z"
+						},
+						{
+							"key": "to",
+							"value": "2026-06-15T23:59:59Z"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4. Get Event By ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/events/{{createdEventId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"events",
+						"{{createdEventId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "5. Delete Event",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 204 No Content\", function () {",
+							"    pm.response.to.have.status(204);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/events/{{createdEventId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"events",
+						"{{createdEventId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "6. Delete Event (Again - Expect 404)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 404 Not Found\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/events/{{createdEventId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"events",
+						"{{createdEventId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://localhost:7045",
+			"type": "string"
+		},
+		{
+			"key": "createdEventId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "currentIdempotencyKey",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

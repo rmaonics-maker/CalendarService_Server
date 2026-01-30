@@ -107,11 +107,5 @@ public class EventsController(ICalendarService service, IMapper mapper, IValidat
         return NoContent();
     }
 
-    [HttpGet("users/{userId}/history")]
-    public async Task<IActionResult> GetUserHistory(Guid userId, CancellationToken token)
-    {
-        var history = await _service.GetUserHistoryAsync(userId, token);
-        if (history == null) return NotFound("User not found.");
-        return Ok(history);
-    }
+    
 }

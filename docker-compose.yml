@@ -1,0 +1,50 @@
+services:
+  # Сервис Базы Данных
+  calendar-db:
+    # FIX: Используем Debian-based образ для стабильности Collation/Locale
+    image: postgres:15
+    container_name: calendar-db-1
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-securepass}
+      POSTGRES_DB: CalendarDb
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    networks:
+      - calendar-net
+    # FIX: Добавлена реальная проверка
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d CalendarDb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # Сервис API
+  calendar-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: calendar-api-1
+    environment:
+      # FIX: Явно указываем host=calendar-db. Порт указывать не обязательно, если он стандартный, но полезно.
+      # Обрати внимание: мы НЕ хардкодим пароль здесь, а берем из .env, как и база.
+      ConnectionStrings__DefaultConnection: "Host=calendar-db;Port=5432;Database=CalendarDb;Username=${DB_USER:-postgres};Password=${DB_PASSWORD:-securepass}"
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: 8080 
+    ports:
+      - "5000:8080"
+    networks:
+      - calendar-net
+    depends_on:
+      calendar-db:
+        condition: service_healthy # Ждем, пока pg_isready скажет "ОК"
+    restart: on-failure
+
+volumes:
+  pg-data:
+
+networks:
+  calendar-net:
+    driver: bridge

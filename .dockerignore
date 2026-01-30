@@ -1,0 +1,10 @@
+# .dockerignore
+**/.git
+**/.vs
+**/bin
+**/obj
+**/TestResults
+**/*.env
+docker-compose.yml
+Dockerfile
+README.md

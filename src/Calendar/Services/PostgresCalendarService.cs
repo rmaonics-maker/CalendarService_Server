@@ -179,12 +179,20 @@ public class PostgresCalendarService(ApplicationDbContext context) : ICalendarSe
         return new UserHistoryResponse
         {
             UserId = user.Id,
-            Name = user.Username,
+            Name = user.Name,
             Balance = user.Balance,
             Events = user.Bookings
                 .Select(MapToDomain)
                 .ToList()
         };
+    }
+
+    public async Task<Guid> CreateUserAsync(User user, CancellationToken token)
+    {
+        
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync(token);
+        return user.Id;
     }
 }
 

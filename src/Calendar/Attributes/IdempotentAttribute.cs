@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace Calendar_Service;
+namespace Calendar_Service.Attributes;
 
 public class IdempotentAttribute : Attribute, IAsyncActionFilter
 {

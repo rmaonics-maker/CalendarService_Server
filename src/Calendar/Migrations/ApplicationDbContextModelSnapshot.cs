@@ -80,10 +80,16 @@ namespace Calendar_Service.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("balance");
 
-                    b.Property<string>("Username")
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text")
-                        .HasColumnName("username");
+                        .HasColumnName("name");
 
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
@@ -93,6 +99,10 @@ namespace Calendar_Service.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_users");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasDatabaseName("ix_users_email");
 
                     b.ToTable("users", null, t =>
                         {

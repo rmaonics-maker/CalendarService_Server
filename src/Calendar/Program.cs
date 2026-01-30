@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 // 1. РЕГИСТРАЦИЯ СЕРВИСОВ (DI Container)
 
 builder.Services.AddControllers();
-
+builder.Services.AddHealthChecks();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddEndpointsApiExplorer();
 
@@ -33,7 +33,7 @@ var app = builder.Build();
 
 
 // 2. MIDDLEWARE PIPELINE (Конвейер запроса)
-
+app.UseHealthChecks("/health");
 app.UseSwagger(); 
 app.UseSwaggerUI(c => 
 {
@@ -45,3 +45,5 @@ app.UseHttpsRedirection();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }

@@ -2,7 +2,7 @@
 using Calendar_Service.Contracts;
 using Calendar_Service.Models;
 
-namespace Calendar_Service;
+namespace Calendar_Service.Mapping;
 
 public class EventMappingProfile : Profile
 {

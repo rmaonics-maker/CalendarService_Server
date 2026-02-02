@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
-COPY ["src/Calendar/Calendar.csproj", "src/Calendar/"]
+COPY ["src/Calendar/Calendar_Service.csproj", "src/Calendar/"]
 
 # 2. Исправляем путь восстановления
 RUN dotnet restore "src/Calendar/Calendar_Service.csproj"

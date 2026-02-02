@@ -5,9 +5,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Testcontainers.PostgreSql;
-using Calendar_Service.Data; // <-- FIX: Твой реальный namespace
+using Calendar_Service.Data; 
 using Npgsql;
-using Xunit; // <-- FIX: Обязательно для IAsyncLifetime
+using Xunit;
+using Calendar.IntegrationTests.Helpers;
+using Microsoft.AspNetCore.Authentication;
 
 namespace Calendar.IntegrationTests
 {
@@ -22,6 +24,9 @@ namespace Calendar.IntegrationTests
             .Build();
 #pragma warning restore CS0618
 
+        public string DbConnectionString => _dbContainer.GetConnectionString();
+
+
         public new async Task DisposeAsync()
         {
             await _dbContainer.StopAsync();
@@ -35,18 +40,19 @@ namespace Calendar.IntegrationTests
         {
             builder.ConfigureTestServices(services =>
             {
-                var descriptor = services.SingleOrDefault(
-                    d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
-
-                if (descriptor != null)
+                services.RemoveAll(typeof(DbContextOptions<ApplicationDbContext>));
+                services.AddDbContext<ApplicationDbContext>(options =>
                 {
-                    services.Remove(descriptor);
-                }
-
-                services.AddDbContext<ApplicationDbContext>(option =>
-                {
-                    option.UseNpgsql(_dbContainer.GetConnectionString());
+                    options.UseNpgsql(_dbContainer.GetConnectionString());
                 });
+
+               services.AddAuthentication(options =>
+               {
+                   options.DefaultAuthenticateScheme = TestAuthHandler.AuthenticationScheme;
+                   options.DefaultChallengeScheme = TestAuthHandler.AuthenticationScheme;
+               })
+                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
+                   TestAuthHandler.AuthenticationScheme, options => { });
 
                 var serviceProvider = services.BuildServiceProvider();
                 using var scope = serviceProvider.CreateScope();

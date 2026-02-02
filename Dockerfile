@@ -1,5 +1,4 @@
 # Stage 1: Build
-# Используем полноценный SDK для сборки (тут есть шелл и утилиты)
 FROM [mcr.microsoft.com/dotnet/sdk:10.0](https://mcr.microsoft.com/dotnet/sdk:10.0) AS build
 WORKDIR /src
 

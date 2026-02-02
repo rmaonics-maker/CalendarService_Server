@@ -1,34 +1,72 @@
-﻿using Calendar_Service.Data;
+﻿using Calendar.IntegrationTests.Helpers;
+using Calendar_Service.Data;
+using Calendar_Service.Models;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Respawn;
+using Respawn.Graph;
 
-namespace Calendar.IntegrationTests
+namespace Calendar.IntegrationTests;
+
+[Collection("Shared Integration Collection")]
+public class BaseIntegrationTest : IAsyncLifetime
 {
-    [Collection("Shared Integration Collection")]
-    public class BaseIntegrationTest : IAsyncLifetime
+    protected readonly HttpClient Client;
+    protected readonly IServiceScope Scope;
+    protected readonly ApplicationDbContext DbContext;
+    private readonly CalendarApiFactory _factory;
+
+    private static Respawner? _respawner;
+
+
+    public BaseIntegrationTest(CalendarApiFactory factory)
     {
-        protected readonly HttpClient Client;
-        protected readonly IServiceScope Scope;
-        protected readonly ApplicationDbContext DbContext;
+        _factory = factory;
+        Client = factory.CreateClient();
 
-        public BaseIntegrationTest(CalendarApiFactory factory)
+        Client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue(TestAuthHandler.AuthenticationScheme);
+
+        Scope = factory.Services.CreateScope();
+        DbContext = Scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    }
+
+    public Task DisposeAsync()
+    {
+        Scope.Dispose();
+        return Task.CompletedTask;
+    }
+
+    public async Task InitializeAsync()
+    {
+        using var connection = new Npgsql.NpgsqlConnection(_factory.DbConnectionString);
+        await connection.OpenAsync();
+
+        if (_respawner == null)
         {
-            Client = factory.CreateClient();
-            Scope = factory.Services.CreateScope();
-            DbContext = Scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            _respawner = await Respawner.CreateAsync(connection, new RespawnerOptions
+            {
+                TablesToIgnore = new Table[] { "__EFMigrationsHistory" }, 
+                SchemasToInclude = new[] { "public" },
+                DbAdapter = DbAdapter.Postgres
+            });
         }
 
-        public Task DisposeAsync()
-        {
-            Scope.Dispose();
-            return Task.CompletedTask;
-        }
+        await _respawner.ResetAsync(connection);
+    }
 
-        public Task InitializeAsync()
+    protected async Task<User> CreateUserInDbAsync()
+    {
+        var user = new User
         {
-            return Task.CompletedTask;
-        }
+            Id = Guid.NewGuid(), 
+            Name = "Test Booker",
+            Email = $"booker_{Guid.NewGuid()}@example.com",
+            Balance = 1000 
+        };
+
+        await DbContext.Users.AddAsync(user);
+        await DbContext.SaveChangesAsync();
+
+        return user;
     }
 }

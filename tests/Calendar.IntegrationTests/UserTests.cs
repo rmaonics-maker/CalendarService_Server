@@ -1,9 +1,7 @@
 ﻿using System.Net;
-using System.Net.Http.Json; // Для PostAsJsonAsync
+using System.Net.Http.Json; 
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Xunit;
-using Calendar_Service.Models;
 
 namespace Calendar.IntegrationTests;
 
@@ -19,7 +17,6 @@ public class UserTests(CalendarApiFactory factory) : BaseIntegrationTest(factory
         {
             Name = "Integration Tester",
             Email = uniqueEmail
-            // Добавь другие обязательные поля, если они есть (например, Password)
         };
 
         // 2. Act
@@ -32,14 +29,12 @@ public class UserTests(CalendarApiFactory factory) : BaseIntegrationTest(factory
         response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Created);
 
         // 4. Assert (Database Level)
-        // Вот она — сила интеграционных тестов. Мы лезем в базу проверять правду.
-
         // Используем Scope, созданный в BaseIntegrationTest
         var userInDb = await DbContext.Users
             .FirstOrDefaultAsync(u => u.Email == uniqueEmail);
 
         userInDb.Should().NotBeNull("пользователь должен был сохраниться в БД");
         userInDb!.Name.Should().Be("Integration Tester");
-        // userInDb.Id.Should().NotBeEmpty(); // Если ID генерируется базой
+        userInDb.Id.Should().NotBeEmpty(); 
     }
 }

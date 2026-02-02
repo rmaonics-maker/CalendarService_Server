@@ -24,7 +24,6 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
         cache: true 
-        cache-dependency-path: '**/packages.lock.json' 
 
     - name: Run Tests
       run: dotnet test --configuration Release --verbosity normal

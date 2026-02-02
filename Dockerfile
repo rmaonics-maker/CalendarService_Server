@@ -5,7 +5,7 @@ WORKDIR /app
 COPY ["src/Calendar/Calendar.csproj", "src/Calendar/"]
 
 # 2. Исправляем путь восстановления
-RUN dotnet restore "src/Calendar/Calendar.csproj"
+RUN dotnet restore "src/Calendar/Calendar_Service.csproj"
 
 # 3. Копируем всё остальное
 COPY . .
@@ -14,10 +14,10 @@ COPY . .
 WORKDIR "/app/src/Calendar"
 
 # 5. Собираем и публикуем
-RUN dotnet build "Calendar.csproj" -c Release -o /app/build
+RUN dotnet build "Calendar_Service.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "Calendar.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Calendar_Service.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # Stage 2: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled AS final

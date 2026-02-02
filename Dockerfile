@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM [mcr.microsoft.com/dotnet/sdk:10.0](https://mcr.microsoft.com/dotnet/sdk:10.0) AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Сначала копируем только файлы проекта и восстанавливаем зависимости.
@@ -18,7 +18,7 @@ RUN dotnet publish "Calendar.csproj" -c Release -o /app/publish /p:UseAppHost=fa
 
 # Stage 2: Runtime - Chiseled
 # Используем тег noble-chiseled (Ubuntu 24.04).
-FROM [mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled](https://mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled) AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled AS final
 WORKDIR /app
 
 # В Chiseled образах обычно уже настроен non-root user (с UID 1654), 

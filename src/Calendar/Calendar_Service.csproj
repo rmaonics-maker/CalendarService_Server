@@ -13,6 +13,8 @@
         <PackageReference Include="EFCore.NamingConventions" Version="10.0.0" />
         <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
         <PackageReference Include="Ical.Net" Version="5.2.0" />
+        <PackageReference Include="MassTransit" Version="9.0.0" />
+        <PackageReference Include="MassTransit.RabbitMQ" Version="9.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.1" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.1">
@@ -22,6 +24,10 @@
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
         <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="10.1.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Contracts\Calendar.Contracts.csproj" />
     </ItemGroup>
 
 </Project>

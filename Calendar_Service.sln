@@ -9,6 +9,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Calendar.IntegrationTests", "tests\Calendar.IntegrationTests\Calendar.IntegrationTests.csproj", "{0A6FE06E-1AA2-4580-A102-A6E25C203EFF}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Contracts", "Contracts", "{FFBE31B8-50B9-B415-22BC-2F92C97CADA3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Calendar.Contracts", "src\Contracts\Calendar.Contracts.csproj", "{527A7B5D-A8AD-4CFE-9193-3888FA62C813}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,12 +49,26 @@ Global
 		{0A6FE06E-1AA2-4580-A102-A6E25C203EFF}.Release|x64.Build.0 = Release|Any CPU
 		{0A6FE06E-1AA2-4580-A102-A6E25C203EFF}.Release|x86.ActiveCfg = Release|Any CPU
 		{0A6FE06E-1AA2-4580-A102-A6E25C203EFF}.Release|x86.Build.0 = Release|Any CPU
+		{527A7B5D-A8AD-4CFE-9193-3888FA62C813}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{527A7B5D-A8AD-4CFE-9193-3888FA62C813}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{527A7B5D-A8AD-4CFE-9193-3888FA62C813}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{527A7B5D-A8AD-4CFE-9193-3888FA62C813}.Debug|x64.Build.0 = Debug|Any CPU
+		{527A7B5D-A8AD-4CFE-9193-3888FA62C813}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{527A7B5D-A8AD-4CFE-9193-3888FA62C813}.Debug|x86.Build.0 = Debug|Any CPU
+		{527A7B5D-A8AD-4CFE-9193-3888FA62C813}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{527A7B5D-A8AD-4CFE-9193-3888FA62C813}.Release|Any CPU.Build.0 = Release|Any CPU
+		{527A7B5D-A8AD-4CFE-9193-3888FA62C813}.Release|x64.ActiveCfg = Release|Any CPU
+		{527A7B5D-A8AD-4CFE-9193-3888FA62C813}.Release|x64.Build.0 = Release|Any CPU
+		{527A7B5D-A8AD-4CFE-9193-3888FA62C813}.Release|x86.ActiveCfg = Release|Any CPU
+		{527A7B5D-A8AD-4CFE-9193-3888FA62C813}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{0A6FE06E-1AA2-4580-A102-A6E25C203EFF} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{FFBE31B8-50B9-B415-22BC-2F92C97CADA3} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{527A7B5D-A8AD-4CFE-9193-3888FA62C813} = {FFBE31B8-50B9-B415-22BC-2F92C97CADA3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7EB63C76-D728-405A-B34F-89EB8FEF7A76}

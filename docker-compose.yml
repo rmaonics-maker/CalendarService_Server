@@ -3,41 +3,55 @@ services:
     image: postgres:15
     container_name: calendar-db-1
     environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-securepass}
-      POSTGRES_DB: CalendarDb
-    volumes:
-      - pg-data:/var/lib/postgresql/data
+      POSTGRES_USER: ${DB_USER}       # Берет из .env
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     networks:
       - calendar-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d CalendarDb"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 10s
     restart: unless-stopped
 
-  calendar-api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: calendar-api-1
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
     environment:
-      ConnectionStrings__DefaultConnection: "Host=calendar-db;Port=5432;Database=CalendarDb;Username=${DB_USER:-postgres};Password=${DB_PASSWORD:-securepass}"
-      ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_HTTP_PORTS: 8080 
+      RABBITMQ_DEFAULT_USER: ${RABBIT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBIT_PASS}
     ports:
-      - "5000:8080"
+      - "5672:5672"
+      - "15672:15672"
     networks:
       - calendar-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  calendar-api:
+    build: .
+    container_name: calendar-api-1
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=${DB_HOST};Port=5432;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
+      
+      # Настройки RabbitMQ для маппинга в C# класс
+      RabbitMq__Host: ${RABBIT_HOST}
+      RabbitMq__Username: ${RABBIT_USER}
+      RabbitMq__Password: ${RABBIT_PASS}
+      
+      # Политики
+      RetryPolicy__MaxRetries: ${RETRY_COUNT}
     depends_on:
       calendar-db:
-        condition: service_healthy 
-    restart: on-failure
-
-volumes:
-  pg-data:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - calendar-net
 
 networks:
   calendar-net:

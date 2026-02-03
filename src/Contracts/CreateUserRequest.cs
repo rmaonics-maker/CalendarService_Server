@@ -1,4 +1,4 @@
-﻿namespace Calendar_Service.Contracts
+﻿namespace Calendar.Contracts
 {
     public sealed record CreateUserRequest(string Name, string Email, decimal Balance);
 }

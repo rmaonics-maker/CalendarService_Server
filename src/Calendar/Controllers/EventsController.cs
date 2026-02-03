@@ -1,18 +1,20 @@
 ﻿using AutoMapper;
-using Calendar_Service.Contracts;
+using Calendar.Contracts;
 using Calendar_Service.Models;
 using Calendar_Service.Services;
 using FluentValidation;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Calendar_Service.Controllers;
 
 [ApiController]
 [Route(("api/v1/events"))]
-public class EventsController(ICalendarService service, IMapper mapper, IValidator<CreateEventRequest> validator) : ControllerBase
+public class EventsController(ICalendarService service, IMapper mapper, IValidator<CreateEventRequest> validator, IPublishEndpoint publishEndpoint) : ControllerBase
 {
     private readonly ICalendarService _service = service;
     private readonly IMapper _mapper = mapper;
+    private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateEvent(Guid id, [FromBody] UpdateEventRequest request, CancellationToken token)
@@ -44,7 +46,9 @@ public class EventsController(ICalendarService service, IMapper mapper, IValidat
         try
         {
             // service layer
-            await _service.CreateEventAsync(entity, token); 
+            var eventId = await _service.CreateEventAsync(entity, token); 
+
+            await _publishEndpoint.Publish(new EventCreated(eventId, entity.Title, entity.)
 
             return CreatedAtAction(nameof(Get), new {id = entity.Id}, _mapper.Map<EventResponse>(entity));
         }

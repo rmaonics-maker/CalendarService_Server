@@ -1,9 +1,8 @@
-﻿using Calendar_Service.Contracts;
+﻿using Calendar.Contracts;
 using Calendar_Service.Data;
 using Calendar_Service.Models;
 using Calendar_Service.Specifications;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using NpgsqlTypes;
 
 namespace Calendar_Service.Services;
@@ -12,7 +11,7 @@ public class PostgresCalendarService(ApplicationDbContext context) : ICalendarSe
 {
     private readonly ApplicationDbContext _context = context;
 
-    public async Task<Guid> CreateEventAsync(CalendarEvent evt, CancellationToken token)
+    public async Task<(Guid Id , string Email)> CreateEventAsync(CalendarEvent evt, CancellationToken token)
     {
         const decimal Price = 10.0m; // Заглушка для цены
         
@@ -58,7 +57,7 @@ public class PostgresCalendarService(ApplicationDbContext context) : ICalendarSe
             // 5. фиксация
             await transaction.CommitAsync(token);
             // Возвращаем ID созданной сущности
-            return booking.Id;
+            return (booking.Id, user.Email);
         }
         catch (Exception)
         {
@@ -77,7 +76,6 @@ public class PostgresCalendarService(ApplicationDbContext context) : ICalendarSe
         return bookings.Select(MapToDomain);
     }
 
-    // МЕТОД ЧТЕНИЯ (Одиночный)
     public CalendarEvent? GetEvent(Guid id)
     {
         var booking = _context.Bookings
@@ -96,7 +94,6 @@ public class PostgresCalendarService(ApplicationDbContext context) : ICalendarSe
         };
     }
 
-    // Метод удаления (если был в интерфейсе)
     public async Task<bool> DeleteEventAsync(Guid id, CancellationToken token)
     {
         var booking = _context.Bookings.Find(id);
@@ -110,7 +107,6 @@ public class PostgresCalendarService(ApplicationDbContext context) : ICalendarSe
     public async Task<bool> UpdateEventAsync(Guid id, UpdateEventRequest request, CancellationToken token)
     {
         // 1. ЗАГРУЗКА (Tracking включен по умолчанию)
-        // Мы тянем сущность из базы. ChangeTracker делает "снимок" её состояния.
         var booking = await _context.Bookings.FirstOrDefaultAsync(b => b.Id == id, token);
 
         if (booking == null)
@@ -119,29 +115,22 @@ public class PostgresCalendarService(ApplicationDbContext context) : ICalendarSe
         }
 
         // 2. МОДИФИКАЦИЯ
-        // Мы просто меняем свойства C# объекта.
         booking.Title = request.Title;
 
-        // Если меняем длительность, нужно пересчитать Period (tsrange)
-        // Вспоминаем наш хак с UtcUnspecified для базы
         if (request.Duration != TimeSpan.Zero)
         {
-            var startUnspecified = booking.Period.LowerBound; // Текущее начало
+            var startUnspecified = booking.Period.LowerBound; 
             var newEndUnspecified = startUnspecified.Add(request.Duration);
 
             booking.Period = new NpgsqlRange<DateTime>(startUnspecified, newEndUnspecified);
         }
 
         // 3. СОХРАНЕНИЕ
-        // Вызываем SaveChanges. 
-        // EF Core сравнивает текущий объект со "снимком". 
-        // Он видит, что Title изменился, и генерирует SQL: UPDATE bookings SET Title = ... WHERE Id = ...
         await _context.SaveChangesAsync(token);
 
         return true;
     }
 
-    // Санитайзер для дат. Превращает "2026-06-15 14:00 UTC" в "2026-06-15 14:00 Unspecified"
     private static DateTime EnsureUtcUnspecified(DateTime dt)
     {
         return DateTime.SpecifyKind(dt, DateTimeKind.Unspecified);
@@ -149,8 +138,6 @@ public class PostgresCalendarService(ApplicationDbContext context) : ICalendarSe
 
     private static CalendarEvent MapToDomain(Booking b)
     {
-        // При чтении из базы мы знаем, что храним там UTC.
-        // Поэтому восстанавливаем Kind = Utc перед созданием DateTimeOffset.
         var startUnspecified = b.Period.LowerBound;
         var endUnspecified = b.Period.UpperBound;
 
@@ -181,9 +168,23 @@ public class PostgresCalendarService(ApplicationDbContext context) : ICalendarSe
             UserId = user.Id,
             Name = user.Name,
             Balance = user.Balance,
-            Events = user.Bookings
-                .Select(MapToDomain)
-                .ToList()
+            
+            Events = [.. user.Bookings.Select(b =>
+            {
+                // 1. Восстанавливаем UTC Kind (Npgsql возвращает Unspecified)
+                var startUtc = DateTime.SpecifyKind(b.Period.LowerBound, DateTimeKind.Utc);
+                var endUtc = DateTime.SpecifyKind(b.Period.UpperBound, DateTimeKind.Utc);
+
+                // 2. Создаем DTO
+                return new UserHistoryResponse.HistoryEventDto
+                {
+                    Id = b.Id,
+                    Title = b.Title,
+                    Location = "Room " + b.RoomId, 
+                    StartTime = new DateTimeOffset(startUtc),
+                    EndTime = new DateTimeOffset(endUtc)
+                };
+            })]
         };
     }
 

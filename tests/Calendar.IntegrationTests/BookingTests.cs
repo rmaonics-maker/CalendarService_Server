@@ -1,5 +1,5 @@
-﻿using Calendar_Service.Contracts;
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
+using Calendar.Contracts;
 
 namespace Calendar.IntegrationTests
 {

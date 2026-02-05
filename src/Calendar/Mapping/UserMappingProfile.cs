@@ -6,9 +6,9 @@ namespace Calendar_Service.Mapping
     {
         public UserMappingProfile()
         {
-            CreateMap<Contracts.CreateUserRequest, Models.User>()
+            CreateMap<Calendar.Contracts.CreateUserRequest, Models.User>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore());
-            CreateMap<Models.User, Contracts.UserResponse>();
+            CreateMap<Models.User, Calendar.Contracts.UserResponse>();
         }
     }
 }

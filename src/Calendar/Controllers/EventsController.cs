@@ -49,13 +49,14 @@ public class EventsController(ICalendarService service, IMapper mapper, IValidat
             // service layer
             (Guid id, string email) = await _service.CreateEventAsync(entity, token);
 
-            await _publishEndpoint.Publish(new EventCreated(
-            EventId: id,
-            Title: request.Title,
-            UserId: request.UserId,
-            UserEmail: email,       
-            OccurredAt: DateTime.UtcNow
-        ), token);
+            await _publishEndpoint.Publish(new EventCreated
+            {
+                EventId = id,
+                Title = request.Title,
+                UserId = request.UserId,
+                UserEmail = email,       
+                OccurredAt = DateTime.UtcNow
+            }, token);
 
             return CreatedAtAction(nameof(Get), new {id = entity.Id}, _mapper.Map<EventResponse>(entity));
         }

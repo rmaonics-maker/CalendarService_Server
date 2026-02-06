@@ -7,5 +7,8 @@ public record EventResponse(
     string Title,
     string Location,
     DateTimeOffset StartTime,
-    DateTimeOffset EndTime);
-
+    DateTimeOffset EndTime)
+{
+    // Конструктор без параметров для AutoMapper
+    public EventResponse() : this(default, string.Empty, string.Empty, default, default) { }
+};

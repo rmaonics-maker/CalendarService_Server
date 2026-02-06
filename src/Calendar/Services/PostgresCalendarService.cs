@@ -3,11 +3,12 @@ using Calendar_Service.Data;
 using Calendar_Service.Models;
 using Calendar_Service.Specifications;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using NpgsqlTypes;
 
 namespace Calendar_Service.Services;
 
-public class PostgresCalendarService(ApplicationDbContext context) : ICalendarService
+public class PostgresCalendarService(ApplicationDbContext context, ILogger<PostgresCalendarService> logger) : ICalendarService
 {
     private readonly ApplicationDbContext _context = context;
 
@@ -27,7 +28,7 @@ public class PostgresCalendarService(ApplicationDbContext context) : ICalendarSe
 
             if (user.Balance < Price)
             {
-                throw new InvalidOperationException("Not enough mineralz (money).");
+                throw new InvalidOperationException($"Not enough money. User '{user.Id}' has {user.Balance}, but {Price} is required.");
             }
 
             user.Balance -= Price;
@@ -59,8 +60,9 @@ public class PostgresCalendarService(ApplicationDbContext context) : ICalendarSe
             // Возвращаем ID созданной сущности
             return (booking.Id, user.Email);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            logger.LogError(ex, "An error occurred while creating an event.");
             await transaction.RollbackAsync(token);
             throw;
         }
@@ -196,4 +198,3 @@ public class PostgresCalendarService(ApplicationDbContext context) : ICalendarSe
         return user.Id;
     }
 }
-

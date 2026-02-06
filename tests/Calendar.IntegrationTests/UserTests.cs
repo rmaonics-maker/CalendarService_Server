@@ -20,7 +20,7 @@ public class UserTests(CalendarApiFactory factory) : BaseIntegrationTest(factory
         };
 
         // 2. Act
-        // Отправляем POST запрос в API. Убедись, что путь /api/users правильный.
+        // Отправляем POST запрос в API. 
         var response = await Client.PostAsJsonAsync("/api/v1/users", newUser);
 
         // 3. Assert (HTTP Level)

@@ -1,8 +1,9 @@
 # Stage 1: Build
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-WORKDIR /app
+WORKDIR /src
 
 COPY ["src/Calendar/Calendar_Service.csproj", "src/Calendar/"]
+COPY ["src/Contracts/Calendar.Contracts.csproj", "src/Contracts/"]
 
 # 2. Исправляем путь восстановления
 RUN dotnet restore "src/Calendar/Calendar_Service.csproj"
@@ -11,7 +12,7 @@ RUN dotnet restore "src/Calendar/Calendar_Service.csproj"
 COPY . .
 
 # 4. Переходим в правильную рабочую директорию внутри контейнера
-WORKDIR "/app/src/Calendar"
+WORKDIR "/src/src/Calendar"
 
 # 5. Собираем и публикуем
 RUN dotnet build "Calendar_Service.csproj" -c Release -o /app/build
@@ -27,4 +28,4 @@ USER app
 COPY --from=publish /app/publish .
 
 ENV ASPNETCORE_HTTP_PORTS=8080
-ENTRYPOINT ["dotnet", "Calendar.dll"]
+ENTRYPOINT ["dotnet", "Calendar_Service.dll"]

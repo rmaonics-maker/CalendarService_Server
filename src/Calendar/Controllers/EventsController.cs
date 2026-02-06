@@ -5,6 +5,7 @@ using Calendar_Service.Services;
 using FluentValidation;
 using MassTransit;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Calendar_Service.Controllers;
@@ -20,8 +21,6 @@ public class EventsController(ICalendarService service, IMapper mapper, IValidat
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateEvent(Guid id, [FromBody] UpdateEventRequest request, CancellationToken token)
     {
-        // Валидацию можно добавить позже, пока верим на слово
-
         var updated = await _service.UpdateEventAsync(id, request, token);
 
         if (!updated)
@@ -67,6 +66,11 @@ public class EventsController(ICalendarService service, IMapper mapper, IValidat
             // Сервис выбросил InvalidOperationException.
             // Мы превращаем это в HTTP 409 Conflict.
             return Conflict(new { message = ex.Message });
+        }
+        catch (DbUpdateException ex)
+        {
+            // Это может произойти, если есть конфликт в базе данных, например, дубликат ключа
+            return Conflict(new { message = "A database error occurred while creating the event.", details = ex.InnerException?.Message });
         }
 
     }

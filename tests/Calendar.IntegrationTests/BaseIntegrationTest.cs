@@ -3,7 +3,6 @@ using Calendar_Service.Data;
 using Calendar_Service.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Respawn;
-using Respawn.Graph;
 
 namespace Calendar.IntegrationTests;
 
@@ -38,18 +37,15 @@ public class BaseIntegrationTest : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        using var connection = new Npgsql.NpgsqlConnection(_factory.DbConnectionString);
+        await using var connection = new Npgsql.NpgsqlConnection(_factory.DbConnectionString);
         await connection.OpenAsync();
 
-        if (_respawner == null)
+        _respawner ??= await Respawner.CreateAsync(connection, new RespawnerOptions
         {
-            _respawner = await Respawner.CreateAsync(connection, new RespawnerOptions
-            {
-                TablesToIgnore = new Table[] { "__EFMigrationsHistory" }, 
-                SchemasToInclude = new[] { "public" },
-                DbAdapter = DbAdapter.Postgres
-            });
-        }
+            TablesToIgnore = ["__EFMigrationsHistory"],
+            SchemasToInclude = ["public"],
+            DbAdapter = DbAdapter.Postgres
+        });
 
         await _respawner.ResetAsync(connection);
     }

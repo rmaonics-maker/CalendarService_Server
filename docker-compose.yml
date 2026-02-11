@@ -6,6 +6,8 @@ services:
       POSTGRES_USER: ${DB_USER}       # Берет из .env
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
     networks:
       - calendar-net
     healthcheck:
@@ -45,7 +47,8 @@ services:
       RabbitMq__Host: ${RABBIT_HOST}
       RabbitMq__Username: ${RABBIT_USER}
       RabbitMq__Password: ${RABBIT_PASS}
-      
+      OTEL_EXPLORER_OTLP_ENDPOINT: "http://jaeger:4317"
+      OTEL_SERVICENAME: "Calendar.Api"
       # Политики
       RetryPolicy__MaxRetries: ${RETRY_COUNT}
     depends_on:
@@ -67,7 +70,9 @@ services:
       RabbitMq__Host: ${RABBIT_HOST}
       RabbitMq__Username: ${RABBIT_USER}
       RabbitMq__Password: ${RABBIT_PASS}
-
+      OTEL_EXPLORER_OTLP_ENDPOINT: "http://jaeger:4317"
+      OTEL_SERVICENAME: "Calendar.Worker"
+      
       ConnectionStrings__DefaultConnection: "Host=calendar-db;Port=5432;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
 
     depends_on:
@@ -79,6 +84,18 @@ services:
     networks:
       - calendar-net
     restart: on-failure
+
+  jaeger:
+    image: jaeger-tracing/all-in-one:latest
+    container_name: jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true 
+    ports:
+      - "16686:16686" 
+      - "4317:4317"   
+      - "4318:4318"   
+    networks:
+      - calendar-net
 
 networks:
   calendar-net:

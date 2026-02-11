@@ -1,7 +1,11 @@
 using System.Net;
 using MassTransit;
+using MassTransit.Monitoring;
 using Microsoft.Extensions.Options;
 using NotificationService.Options;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 namespace NotificationService;
 
@@ -61,6 +65,22 @@ public class Program
             });
         });
 
+        builder.Services.AddOpenTelemetry()
+            .WithTracing(providerBuilder =>
+            {
+                providerBuilder
+                    .SetResourceBuilder(ResourceBuilder.CreateDefault()
+                        .AddService("Calendar.Worker"))
+                    .AddSource("MassTransit")
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddConsoleExporter()
+                    .AddOtlpExporter();
+            })
+            .WithMetrics(providerBuilder => providerBuilder
+                .AddMeter(InstrumentationOptions.MeterName)
+                .AddAspNetCoreInstrumentation());
+        
         var host = builder.Build();
         host.Run();
     }

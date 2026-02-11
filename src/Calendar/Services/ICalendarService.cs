@@ -1,12 +1,14 @@
 ﻿using Calendar.Contracts;
 using Calendar_Service.Models;
+using MassTransit;
 using CalendarEvent = Calendar_Service.Models.CalendarEvent;
 
 namespace Calendar_Service.Services;
 
 public interface ICalendarService
 {
-    Task<(Guid Id, string Email)> CreateEventAsync(CalendarEvent evt, CancellationToken token);
+    Task<(Guid Id, string Email)> CreateEventAsync(CalendarEvent evt, IPublishEndpoint publishEndpoint,
+        CancellationToken token);
     CalendarEvent? GetEvent(Guid id);
     Task<UserHistoryResponse?> GetUserHistoryAsync(Guid userId, CancellationToken token);
     Task<Guid> CreateUserAsync(User user, CancellationToken token);

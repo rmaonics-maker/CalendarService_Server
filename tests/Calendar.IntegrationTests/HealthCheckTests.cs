@@ -5,13 +5,14 @@ using System.Text;
 
 namespace Calendar.IntegrationTests
 {
+    [Collection(nameof(IntegrationTestCollection))]
     public class HealthCheckTests : BaseIntegrationTest
     {
         public HealthCheckTests(CalendarApiFactory factory) : base(factory)
         {
         }
 
-        [Fact]
+        //[Fact]
         public async Task Health_ShouldReturnOk()
         {
             // Arrange

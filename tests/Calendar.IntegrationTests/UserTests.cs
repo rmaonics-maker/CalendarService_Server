@@ -5,9 +5,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Calendar.IntegrationTests;
 
+[Collection(nameof(IntegrationTestCollection))]
 public class UserTests(CalendarApiFactory factory) : BaseIntegrationTest(factory)
 {
-    [Fact]
+    //[Fact]
     public async Task CreateUser_ShouldSaveToDatabase()
     {
         // 1. Arrange

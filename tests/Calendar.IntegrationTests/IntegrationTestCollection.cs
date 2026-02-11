@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Calendar.IntegrationTests
 {
-    [CollectionDefinition("Shared Integration Collection")]
+    [CollectionDefinition(nameof(IntegrationTestCollection))]
     public class IntegrationTestCollection : ICollectionFixture<CalendarApiFactory>
     {
     }

@@ -3,8 +3,12 @@ using Calendar_Service.Data;
 using Calendar_Service.Services;
 using FluentValidation;
 using MassTransit;
+using MassTransit.Monitoring;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi; 
+using Microsoft.OpenApi;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +23,22 @@ builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection(Rab
 builder.Services.AddMassTransit(x =>
 {
     x.SetKebabCaseEndpointNameFormatter();
+    x.AddEntityFrameworkOutbox<ApplicationDbContext>(o =>
+    {
+        o.UsePostgres();
+        o.UseBusOutbox();
+
+        o.DuplicateDetectionWindow = TimeSpan.FromMinutes(30);
+
+        o.QueryDelay = TimeSpan.FromSeconds(2);
+        o.QueryMessageLimit = 100;
+    });
+    
+    x.AddConfigureEndpointsCallback((context, name, cfg) =>
+    {
+        cfg.UseEntityFrameworkOutbox<ApplicationDbContext>(context);
+    });
+    
     x.UsingRabbitMq((context, cfg) =>
     {
         var rabbitMqOptions = context.GetRequiredService<Microsoft.Extensions.Options.IOptions<RabbitMqOptions>>().Value;
@@ -41,6 +61,22 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddAutoMapper(typeof(Program));
 
 builder.Services.AddMemoryCache();
+
+builder.Services.AddOpenTelemetry()
+    .WithTracing(providerBuilder =>
+    {
+        providerBuilder
+            .SetResourceBuilder(ResourceBuilder.CreateDefault()
+                .AddService("Calendar.Api"))
+            .AddSource("MassTransit")
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddConsoleExporter()
+            .AddOtlpExporter();
+    })
+    .WithMetrics(providerBuilder => providerBuilder
+        .AddMeter(InstrumentationOptions.MeterName)
+        .AddAspNetCoreInstrumentation());
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(option => option

@@ -5,18 +5,27 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cdc0382f-140b-4363-967d-de23ac951b5d" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/tests/Calendar.IntegrationTests/ChaosTests.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/NotificationService/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/src/Calendar/Dockerfile" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/Calendar.IntegrationTests/appsettings.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Calendar/Calendar_Service.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/src/Calendar/Calendar_Service.csproj" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Calendar/Controllers/EventsController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/Calendar/Controllers/EventsController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Calendar/Mapping/EventMappingProfile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/Calendar/Mapping/EventMappingProfile.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Calendar/Data/ApplicationDbContext.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/Calendar/Data/ApplicationDbContext.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Calendar/Migrations/ApplicationDbContextModelSnapshot.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/Calendar/Migrations/ApplicationDbContextModelSnapshot.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Calendar/Models/CalendarEvent.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/Calendar/Models/CalendarEvent.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Calendar/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/Calendar/Program.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Calendar/Services/ICalendarService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/Calendar/Services/ICalendarService.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Calendar/Services/PostgresCalendarService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/Calendar/Services/PostgresCalendarService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Calendar/appsettings.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/Calendar/appsettings.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/Calendar.IntegrationTests/BaseIntegrationTest.cs" beforeDir="false" afterPath="$PROJECT_DIR$/tests/Calendar.IntegrationTests/BaseIntegrationTest.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/Calendar.IntegrationTests/BookingTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/tests/Calendar.IntegrationTests/BookingTests.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/Calendar.IntegrationTests/Calendar.IntegrationTests.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/tests/Calendar.IntegrationTests/Calendar.IntegrationTests.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/Calendar.IntegrationTests/CalendarApiFactory.cs" beforeDir="false" afterPath="$PROJECT_DIR$/tests/Calendar.IntegrationTests/CalendarApiFactory.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/Calendar.IntegrationTests/ChaosTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/tests/Calendar.IntegrationTests/ChaosTests.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/Calendar.IntegrationTests/HealthCheckTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/tests/Calendar.IntegrationTests/HealthCheckTests.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/Calendar.IntegrationTests/IntegrationTestCollection.cs" beforeDir="false" afterPath="$PROJECT_DIR$/tests/Calendar.IntegrationTests/IntegrationTestCollection.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/Calendar.IntegrationTests/UserTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/tests/Calendar.IntegrationTests/UserTests.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/NotificationService/NotificationConsumer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/tests/NotificationService/NotificationConsumer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/NotificationService/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/tests/NotificationService/Program.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -83,7 +92,8 @@
       <option name="presentableId" value="Default" />
       <updated>1770363302662</updated>
       <workItem from="1770364019811" duration="8499000" />
-      <workItem from="1770383105126" duration="1234000" />
+      <workItem from="1770383105126" duration="2338000" />
+      <workItem from="1770637305842" duration="2810000" />
     </task>
     <servers />
   </component>

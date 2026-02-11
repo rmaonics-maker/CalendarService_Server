@@ -1,6 +1,7 @@
 ﻿using Calendar.IntegrationTests.Helpers;
 using Calendar_Service.Data;
 using Calendar_Service.Models;
+using MassTransit.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Respawn;
 
@@ -12,6 +13,7 @@ public class BaseIntegrationTest : IAsyncLifetime
     protected readonly HttpClient Client;
     protected readonly IServiceScope Scope;
     protected readonly ApplicationDbContext DbContext;
+    //protected readonly ITestHarness Harness;
     private readonly CalendarApiFactory _factory;
 
     private static Respawner? _respawner;
@@ -27,6 +29,7 @@ public class BaseIntegrationTest : IAsyncLifetime
 
         Scope = factory.Services.CreateScope();
         DbContext = Scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        //Harness = factory.Harness;
     }
 
     public Task DisposeAsync()
@@ -37,6 +40,9 @@ public class BaseIntegrationTest : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        Console.WriteLine("Starting MassTransit Test Harness...");
+        //await Harness.Start();
+        Console.WriteLine("MassTransit Test Harness started successfully");
         await using var connection = new Npgsql.NpgsqlConnection(_factory.DbConnectionString);
         await connection.OpenAsync();
 

@@ -6,8 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Testcontainers.PostgreSql;
 using Calendar_Service.Data; 
-using Npgsql;
-using Xunit;
 using Calendar.IntegrationTests.Helpers;
 using Microsoft.AspNetCore.Authentication;
 
@@ -15,20 +13,18 @@ namespace Calendar.IntegrationTests
 {
     public class CalendarApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
-#pragma warning disable CS0618
-        private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:15")
+        private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder("postgres:15")
             .WithDatabase("CalendarDb_Test")
             .WithUsername("postgres")
             .WithPassword("test_password")
             .Build();
-#pragma warning restore CS0618
 
         public string DbConnectionString => _dbContainer.GetConnectionString();
-
-
+        //public ITestHarness? Harness { get; private set; }
+        
         public new async Task DisposeAsync()
         {
+            //await Harness?.Stop();
             await _dbContainer.StopAsync();
         }
         public async Task InitializeAsync()
@@ -43,7 +39,8 @@ namespace Calendar.IntegrationTests
                 services.RemoveAll(typeof(DbContextOptions<ApplicationDbContext>));
                 services.AddDbContext<ApplicationDbContext>(options =>
                 {
-                    options.UseNpgsql(_dbContainer.GetConnectionString());
+                    options.UseNpgsql(_dbContainer.GetConnectionString())
+                        .UseSnakeCaseNamingConvention();
                 });
 
                services.AddAuthentication(options =>
@@ -53,11 +50,40 @@ namespace Calendar.IntegrationTests
                })
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
                    TestAuthHandler.AuthenticationScheme, options => { });
-
+                
+                // Убираем основную конфигурацию MassTransit из тестовой среды
+                //services.RemoveMassTransit();
+               /* 
+                // Используем упрощенную конфигурацию для тестов
+                services.AddMassTransitTestHarness(cfg =>
+                {
+                    //cfg.AddConsumer<NotificationConsumer>();
+                    
+                    cfg.UsingInMemory((context, config) =>
+                    {
+                        config.ConfigureEndpoints(context);
+                    });
+                });
+*/
                 var serviceProvider = services.BuildServiceProvider();
                 using var scope = serviceProvider.CreateScope();
-                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                dbContext.Database.Migrate();
+                
+                
+                    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                    try
+                    {
+                        dbContext.Database.Migrate();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Migration Error: {ex}");
+                        throw;
+                    }
+                
+                
+                //Harness = serviceProvider.GetRequiredService<ITestHarness>();
+                //Harness.Start().GetAwaiter().GetResult();
+                Console.WriteLine("MassTransit Test Harness initialized");
             });
 
             

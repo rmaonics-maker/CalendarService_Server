@@ -6,22 +6,18 @@ using FluentValidation;
 using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Calendar_Service.Controllers;
 
 [ApiController]
 [Route(("api/v1/events"))]
-public class EventsController(ICalendarService service, IMapper mapper, IValidator<CreateEventRequest> validator, IPublishEndpoint publishEndpoint) : ControllerBase
+public class EventsController(ICalendarService service, IMapper mapper, 
+    IValidator<CreateEventRequest> validator, IPublishEndpoint publishEndpoint) : ControllerBase
 {
-    private readonly ICalendarService _service = service;
-    private readonly IMapper _mapper = mapper;
-    private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
-
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateEvent(Guid id, [FromBody] UpdateEventRequest request, CancellationToken token)
     {
-        var updated = await _service.UpdateEventAsync(id, request, token);
+        var updated = await service.UpdateEventAsync(id, request, token);
 
         if (!updated)
         {
@@ -41,23 +37,14 @@ public class EventsController(ICalendarService service, IMapper mapper, IValidat
             return ValidationProblem(new ValidationProblemDetails(validationResult.ToDictionary()));
         
         // Dto -> Entity
-        var entity = _mapper.Map<CalendarEvent>(request);
+        var entity = mapper.Map<CalendarEvent>(request);
 
         try
         {
             // service layer
-            (Guid id, string email) = await _service.CreateEventAsync(entity, token);
+            (Guid id, string email) = await service.CreateEventAsync(entity, publishEndpoint, token);
 
-            await _publishEndpoint.Publish(new EventCreated
-            {
-                EventId = id,
-                Title = request.Title,
-                UserId = request.UserId,
-                UserEmail = email,       
-                OccurredAt = DateTime.UtcNow
-            }, token);
-
-            return CreatedAtAction(nameof(Get), new {id = entity.Id}, _mapper.Map<EventResponse>(entity));
+            return CreatedAtAction(nameof(Get), new {id = entity.Id}, mapper.Map<EventResponse>(entity));
         }
         catch(InvalidOperationException ex)
         {
@@ -78,7 +65,7 @@ public class EventsController(ICalendarService service, IMapper mapper, IValidat
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Get(Guid id)
     {
-        var evt = _service.GetEvent(id);
+        var evt = service.GetEvent(id);
         if (evt == null) return NotFound(new ProblemDetails
         {
             Title = "Event not found",
@@ -99,7 +86,7 @@ public class EventsController(ICalendarService service, IMapper mapper, IValidat
         if ((to - from).TotalDays > 365)
             return BadRequest("Range too wide. Max 1 year.");
 
-        var events = _service.GetOccurrences(from, to);
+        var events = service.GetOccurrences(from, to);
     
        
         return Ok(events);
@@ -110,7 +97,7 @@ public class EventsController(ICalendarService service, IMapper mapper, IValidat
     {
         // Реализация контракта Delete
         // Сервис возвращает true, если удалил, false, если не нашел.
-        var isDeleted = await _service.DeleteEventAsync(id, token);
+        var isDeleted = await service.DeleteEventAsync(id, token);
 
         if (!isDeleted)
         {

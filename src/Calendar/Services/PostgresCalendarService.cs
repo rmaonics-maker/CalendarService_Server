@@ -2,29 +2,31 @@
 using Calendar_Service.Data;
 using Calendar_Service.Models;
 using Calendar_Service.Specifications;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using NpgsqlTypes;
 
 namespace Calendar_Service.Services;
 
-public class PostgresCalendarService(ApplicationDbContext context, ILogger<PostgresCalendarService> logger) : ICalendarService
+public class PostgresCalendarService(ApplicationDbContext context, ILogger<PostgresCalendarService> logger) 
+    : ICalendarService
 {
-    private readonly ApplicationDbContext _context = context;
+    //private readonly ApplicationDbContext _context = context;
 
-    public async Task<(Guid Id , string Email)> CreateEventAsync(CalendarEvent evt, CancellationToken token)
+    public async Task<(Guid Id , string Email)> CreateEventAsync(CalendarEvent evt, IPublishEndpoint publishEndpoint,
+        CancellationToken token)
     {
         const decimal Price = 10.0m; // Заглушка для цены
         
         // 1. начало транзакции
-        using var transaction = await _context.Database.BeginTransactionAsync(token);
+        await using var transaction = await context.Database.BeginTransactionAsync(token);
 
         try
         {
             // 2. списание денег
             var userId = evt.UserId;
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, token) ?? throw new Exception($"User not found. Я искал ID: '{userId}'. (В базе такого нет)");
+            var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId, token) ?? throw new Exception($"User not found. Я искал ID: '{userId}'. (В базе такого нет)");
 
             if (user.Balance < Price)
             {
@@ -50,11 +52,20 @@ public class PostgresCalendarService(ApplicationDbContext context, ILogger<Postg
                 Version = 0
             };
 
-            _context.Bookings.Add(booking);
+            context.Bookings.Add(booking);
+            
+            await publishEndpoint.Publish(new EventCreated
+            {
+                EventId = evt.Id,
+                Title = evt.Title,
+                UserId = evt.UserId,
+                UserEmail = user.Email,       
+                OccurredAt = DateTime.UtcNow
+            }, token);
 
             // 4. сохранение изменений
-            await _context.SaveChangesAsync(token);
-
+            await context.SaveChangesAsync(token);
+            
             // 5. фиксация
             await transaction.CommitAsync(token);
             // Возвращаем ID созданной сущности
@@ -70,7 +81,7 @@ public class PostgresCalendarService(ApplicationDbContext context, ILogger<Postg
 
     public IEnumerable<CalendarEvent> GetOccurrences(DateTimeOffset from, DateTimeOffset to)
     {
-        var bookings = _context.Bookings
+        var bookings = context.Bookings
             .AsNoTracking()
             .InPeriod(from, to)
             .OrderBy(b => b.Period.LowerBound)
@@ -80,7 +91,7 @@ public class PostgresCalendarService(ApplicationDbContext context, ILogger<Postg
 
     public CalendarEvent? GetEvent(Guid id)
     {
-        var booking = _context.Bookings
+        var booking = context.Bookings
             .AsNoTracking()
             .FirstOrDefault(b => b.Id == id);
 
@@ -98,18 +109,18 @@ public class PostgresCalendarService(ApplicationDbContext context, ILogger<Postg
 
     public async Task<bool> DeleteEventAsync(Guid id, CancellationToken token)
     {
-        var booking = _context.Bookings.Find(id);
+        var booking = context.Bookings.Find(id);
         if (booking == null) return false;
 
-        _context.Bookings.Remove(booking);
-        await _context.SaveChangesAsync(token);
+        context.Bookings.Remove(booking);
+        await context.SaveChangesAsync(token);
         return true;
     }
 
     public async Task<bool> UpdateEventAsync(Guid id, UpdateEventRequest request, CancellationToken token)
     {
         // 1. ЗАГРУЗКА (Tracking включен по умолчанию)
-        var booking = await _context.Bookings.FirstOrDefaultAsync(b => b.Id == id, token);
+        var booking = await context.Bookings.FirstOrDefaultAsync(b => b.Id == id, token);
 
         if (booking == null)
         {
@@ -128,7 +139,7 @@ public class PostgresCalendarService(ApplicationDbContext context, ILogger<Postg
         }
 
         // 3. СОХРАНЕНИЕ
-        await _context.SaveChangesAsync(token);
+        await context.SaveChangesAsync(token);
 
         return true;
     }
@@ -157,7 +168,7 @@ public class PostgresCalendarService(ApplicationDbContext context, ILogger<Postg
 
     public async Task<UserHistoryResponse?> GetUserHistoryAsync(Guid userId, CancellationToken token)
     {
-        var user = await _context.Users
+        var user = await context.Users
             .AsNoTracking()
             .Include(u => u.Bookings)
             .AsSplitQuery()
@@ -193,8 +204,8 @@ public class PostgresCalendarService(ApplicationDbContext context, ILogger<Postg
     public async Task<Guid> CreateUserAsync(User user, CancellationToken token)
     {
         
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync(token);
+        context.Users.Add(user);
+        await context.SaveChangesAsync(token);
         return user.Id;
     }
 }

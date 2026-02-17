@@ -1,0 +1,39 @@
+# --- STAGE 1: Prepare Restore Graph (dotnet-subset) ---
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS prepare-restore
+WORKDIR /source
+
+RUN dotnet tool install --global dotnet-subset
+
+COPY . .
+
+ARG PROJECT_NAME
+
+RUN /root/.dotnet/tools/dotnet-subset restore "src/$PROJECT_NAME/$PROJECT_NAME.csproj" \
+    --root-directory /source \
+    --output /tmp/restore_subset
+
+# --- STAGE 2: Build & Publish ---
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+COPY --from=prepare-restore /tmp/restore_subset .
+RUN dotnet restore
+
+COPY . .
+
+ARG PROJECT_NAME
+WORKDIR "/src/src/$PROJECT_NAME"
+
+RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false --no-restore
+
+RUN mv "/app/publish/$PROJECT_NAME.dll" "/app/publish/App.dll"
+
+# --- STAGE 3: Runtime (Chiseled) ---
+# Используем Chiseled образ для максимальной безопасности (нет shell, нет root по умолчанию)
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-noble-chiseled AS final
+WORKDIR /app
+
+# Копируем артефакты
+COPY --from=build /app/publish .
+
+ENTRYPOINT ["dotnet", "App.dll"]

@@ -85,6 +85,16 @@ builder.Services.AddDbContext<ApplicationDbContext>(option => option
 
 builder.Services.AddScoped<ICalendarService, PostgresCalendarService>();
 
+var secretPath = "/run/secrets";
+if(Directory.Exists(secretPath))
+{
+    builder.Configuration.AddKeyPerFile(directoryPath: secretPath, optional: true, reloadOnChange: true);
+}
+
+builder.Services.AddOptions<RabbitMqOptions>()
+    .Bind(builder.Configuration.GetSection(RabbitMqOptions.SectionName))
+    .ValidateOnStart();
+    
 var app = builder.Build();
 
 

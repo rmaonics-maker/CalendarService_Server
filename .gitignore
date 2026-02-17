@@ -40,6 +40,10 @@ ScaffoldingReadMe.txt
 .env.local
 .env.*.local
 
+secrets/.txt
+secrets/.json
+!secrets/.gitkeep
+
 # Others
 ~$*
 *~
@@ -57,3 +61,4 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 .vs/
+src/Calendar/secrets/db_password.txt

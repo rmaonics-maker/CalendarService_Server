@@ -17,6 +17,10 @@ services:
       retries: 5
     restart: unless-stopped
 
+    secrets:
+    - source: db_passwors_secret
+      target: Database__Password
+
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -58,6 +62,9 @@ services:
         condition: service_healthy
     networks:
       - calendar-net
+    secrets:
+    - source: api_key_secret
+      target: ExternalApi__ApiKey
 
   calendar-worker:
     build:
@@ -100,3 +107,9 @@ services:
 networks:
   calendar-net:
     driver: bridge
+
+secrets:
+  db_passwors_secret:
+    file: ./secrets/db_password.txt
+  api_key_secret:
+    file: ./secrets/api_key.txt

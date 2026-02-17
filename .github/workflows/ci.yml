@@ -1,4 +1,4 @@
-name: Calendar Service CI
+name: CI/CD Pipeline
 
 on:
   push:
@@ -7,35 +7,61 @@ on:
     branches: [ "main" ]
 
 env:
-  DOTNET_VERSION: '10.0.x' 
+  DOTNET_VERSION: '10.0.x'
   IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/calendar-api
 
 jobs:
-  tests:
-    name: Run Tests (Integration & Unit)
+  # --- STAGE 1: INTEGRATION TESTING (DAY 4) ---
+  integration-tests:
+    name: Run Integration Tests
     runs-on: ubuntu-latest
-    
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: integration_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
-    - name: Checkout code
+    - name: Checkout Code
       uses: actions/checkout@v4
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
-        cache: true 
-        cache-dependency-path: '**/*.csproj'
+        cache: true
+        cache-dependency-path: '**/packages.lock.json'
 
-    - name: Run Tests
-      run: dotnet test --configuration Release --verbosity normal
+    - name: Restore & Build
+      run: |
+        dotnet restore
+        dotnet build --no-restore --configuration Release
 
+    - name: Run Integration Tests
+      env:
+        ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=integration_db;Username=testuser;Password=testpassword"
+      run: |
+        dotnet test --no-build --configuration Release --verbosity normal
+
+  # --- STAGE 2: DELIVERY (DAY 5) ---
   build-and-push:
-    needs: tests 
+    name: Build & Push Docker Image
+    needs: integration-tests 
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
-    - name: Checkout code
+    - name: Checkout Code
       uses: actions/checkout@v4
 
     - name: Set up Docker Buildx
@@ -47,12 +73,12 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build and push Docker image
+    - name: Build and Push
       uses: docker/build-push-action@v6
       with:
         context: .
-        file: ./Dockerfile
-        push: true
+        file: Infrastructure/Dockerfile.universal 
+        push: false # Поменять на true, когда настроишь Login
         tags: |
           ${{ env.IMAGE_NAME }}:latest
           ${{ env.IMAGE_NAME }}:${{ github.sha }}

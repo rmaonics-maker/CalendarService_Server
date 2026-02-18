@@ -62,3 +62,4 @@ TestResult.xml
 nunit-*.xml
 .vs/
 src/Calendar/secrets/db_password.txt
+.roo/

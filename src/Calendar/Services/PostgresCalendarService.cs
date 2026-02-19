@@ -11,8 +11,6 @@ namespace Calendar_Service.Services;
 public class PostgresCalendarService(ApplicationDbContext context, ILogger<PostgresCalendarService> logger) 
     : ICalendarService
 {
-    //private readonly ApplicationDbContext _context = context;
-
     public async Task<(Guid Id , string Email)> CreateEventAsync(CalendarEvent evt, IPublishEndpoint publishEndpoint,
         CancellationToken token)
     {
@@ -26,7 +24,8 @@ public class PostgresCalendarService(ApplicationDbContext context, ILogger<Postg
             // 2. списание денег
             var userId = evt.UserId;
 
-            var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId, token) ?? throw new Exception($"User not found. Я искал ID: '{userId}'. (В базе такого нет)");
+            var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId, token) ?? 
+            throw new Exception($"User not found. Я искал ID: '{userId}'. (В базе такого нет)");
 
             if (user.Balance < Price)
             {

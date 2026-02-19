@@ -4,7 +4,7 @@ using NpgsqlTypes;
 
 namespace Calendar_Service.Models;
 
-public class Booking
+public sealed class Booking
 {
     public Guid Id { get; set; }
     public string Title { get; set; } = string.Empty;

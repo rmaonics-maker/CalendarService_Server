@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Calendar_Service.Attributes;
 using Calendar.Contracts;
 using Calendar_Service.Models;
 using Calendar_Service.Services;
@@ -24,11 +25,11 @@ public class EventsController(ICalendarService service, IMapper mapper,
             return NotFound($"Event with id {id} not found");
         }
 
-        return NoContent(); // 204 No Content - стандартный ответ на успешный Update
+        return NoContent();
     }
 
     [HttpPost]
-    //[Idempotent]
+    [Idempotent]
     public async Task<IActionResult> Create(CreateEventRequest request, CancellationToken token)
     {
         var validationResult = await validator.ValidateAsync(request, token);
@@ -49,9 +50,6 @@ public class EventsController(ICalendarService service, IMapper mapper,
         catch(InvalidOperationException ex)
         {
             // ПЕРЕХВАТ КОНФЛИКТА
-            // Если база данных (Postgres) сказала "EXCLUDE constraint violation",
-            // Сервис выбросил InvalidOperationException.
-            // Мы превращаем это в HTTP 409 Conflict.
             return Conflict(new { message = ex.Message });
         }
         catch (DbUpdateException ex)
@@ -82,7 +80,7 @@ public class EventsController(ICalendarService service, IMapper mapper,
         [FromQuery] DateTimeOffset from, 
         [FromQuery] DateTimeOffset to)
     {
-        // Валидация: не давай запрашивать календарь за 100 лет, сервер зависнет!
+        // Валидация
         if ((to - from).TotalDays > 365)
             return BadRequest("Range too wide. Max 1 year.");
 
@@ -95,18 +93,13 @@ public class EventsController(ICalendarService service, IMapper mapper,
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteEvent(Guid id, CancellationToken token)
     {
-        // Реализация контракта Delete
-        // Сервис возвращает true, если удалил, false, если не нашел.
         var isDeleted = await service.DeleteEventAsync(id, token);
 
         if (!isDeleted)
         {
-            // Если в базе нет такого ID - 404.
             return NotFound($"Event with id {id} not found.");
         }
-
-        // Если удалили успешно - 204 No Content.
-        // Не нужно возвращать строку "Deleted", статус код говорит сам за себя.
+        
         return NoContent();
     }
 

@@ -1,6 +1,6 @@
 ﻿namespace Calendar_Service.Models;
 
-public class CalendarEvent
+public sealed class CalendarEvent
 {
     public Guid Id { get; init; }
     public string Title { get; init; } = string.Empty;

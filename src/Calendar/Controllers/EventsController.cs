@@ -54,7 +54,6 @@ public class EventsController(ICalendarService service, IMapper mapper,
         }
         catch (DbUpdateException ex)
         {
-            // Это может произойти, если есть конфликт в базе данных, например, дубликат ключа
             return Conflict(new { message = "A database error occurred while creating the event.", details = ex.InnerException?.Message });
         }
 

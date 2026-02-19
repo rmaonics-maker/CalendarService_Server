@@ -10,19 +10,18 @@ using Npgsql;
 using Xunit;
 using Calendar.IntegrationTests.Helpers;
 using Microsoft.AspNetCore.Authentication;
+using MassTransit;
 
 namespace Calendar.IntegrationTests
 {
     public class CalendarApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
-#pragma warning disable CS0618
         private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
             .WithImage("postgres:15")
             .WithDatabase("CalendarDb_Test")
             .WithUsername("postgres")
             .WithPassword("test_password")
             .Build();
-#pragma warning restore CS0618
 
         public string DbConnectionString => _dbContainer.GetConnectionString();
 
@@ -53,6 +52,13 @@ namespace Calendar.IntegrationTests
                })
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
                    TestAuthHandler.AuthenticationScheme, options => { });
+
+                // ПЕРЕОПРЕДЕЛЯЕМ MASSTRANSIT НА IN-MEMORY
+                services.AddMassTransitTestHarness(x => 
+                {
+                    // Мы не добавляем здесь консьюмеров основного API, 
+                    // так как нам нужно только чтобы Publish работал и HealthCheck проходил.
+                });
 
                 var serviceProvider = services.BuildServiceProvider();
                 using var scope = serviceProvider.CreateScope();

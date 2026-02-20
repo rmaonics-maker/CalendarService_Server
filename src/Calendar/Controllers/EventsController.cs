@@ -45,7 +45,7 @@ public class EventsController(ICalendarService service, IMapper mapper,
             // service layer
             (Guid id, string email) = await service.CreateEventAsync(entity, publishEndpoint, token);
 
-            return CreatedAtAction(nameof(Get), new {id = entity.Id}, mapper.Map<EventResponse>(entity));
+            return CreatedAtAction(nameof(Get), new {id = id}, mapper.Map<EventResponse>(entity));
         }
         catch(InvalidOperationException ex)
         {
@@ -56,7 +56,6 @@ public class EventsController(ICalendarService service, IMapper mapper,
         {
             return Conflict(new { message = "A database error occurred while creating the event.", details = ex.InnerException?.Message });
         }
-
     }
 
     [HttpGet("{id:guid}")]
@@ -72,7 +71,6 @@ public class EventsController(ICalendarService service, IMapper mapper,
         
         return Ok(evt);
     }
-
     
     [HttpGet]
     public IActionResult GetOccurrences(
@@ -84,8 +82,7 @@ public class EventsController(ICalendarService service, IMapper mapper,
             return BadRequest("Range too wide. Max 1 year.");
 
         var events = service.GetOccurrences(from, to);
-    
-       
+        
         return Ok(events);
     }
 
@@ -101,6 +98,4 @@ public class EventsController(ICalendarService service, IMapper mapper,
         
         return NoContent();
     }
-
-    
 }

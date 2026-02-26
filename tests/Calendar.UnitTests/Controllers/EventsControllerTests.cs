@@ -161,4 +161,154 @@ public class EventsControllerTests
         messageProperty?.GetValue(value)?.Should().Be("Not enough money. User 'abc' has 5.0, but 10.0 is required.");
     }
 #endregion
+
+#region Get
+    [Fact]
+    public async Task Get_Should_ReturnsNotFound_When_EventNotFound()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+
+        //Act
+        var result = await _sut.Get(id);
+
+        //Assert
+        result.Should().BeOfType<NotFoundObjectResult>();
+        var conflictResult = (NotFoundObjectResult)result;
+        conflictResult.StatusCode.Should().Be(404);
+        var message = (ProblemDetails)conflictResult.Value;
+        message?.Detail.Should().Be($"Event with id {id} not exist.");
+    }
+
+    [Fact]
+    public async Task Get_Should_ReturnsOk_When_GetEvent()
+    {
+        // Act
+        var evt = _fixture.Create<CalendarEvent>();
+        _service.GetEvent(Arg.Is<Guid>(id => id == evt.Id)).Returns(evt);
+        
+        // Arrange
+        var result = await _sut.Get(evt.Id);
+        
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        var okResult = (OkObjectResult)result;
+        okResult.Value.Should().BeOfType<CalendarEvent>();
+        var eventResult = (CalendarEvent)okResult.Value;
+        eventResult.Id.Should().Be(evt.Id);
+    }
+#endregion
+
+#region GetOccurrences
+    [Fact]
+    public void GetOccurrences_Should_ReturnsBadRequest_When_RangeMoreOneYear()
+    {
+        // Arrange
+        var to = new DateTimeOffset(2024, 1, 1, 1, 1, 1, TimeSpan.Zero);
+        var from = new DateTimeOffset(2022, 2, 3, 4, 5, 6, TimeSpan.Zero);
+        
+        // Act
+        var result = _sut.GetOccurrences(from, to);
+        
+        // Assert
+        result.Should().BeOfType<BadRequestObjectResult>();
+        var badRequestResult = (BadRequestObjectResult)result;
+        badRequestResult.StatusCode.Should().Be(400);
+        badRequestResult.Value.Should().Be("Range too wide. Max 1 year.");
+    }
+
+    [Fact]
+    public void GetOccurrences_Should_ReturnsOk_When_GetOccurrences()
+    {
+        // Arrange
+        var to = DateTimeOffset.UtcNow;
+        var from = to.AddDays(-1);
+        IEnumerable<CalendarEvent> events = [_fixture.Create<CalendarEvent>(), _fixture.Create<CalendarEvent>()];
+        _service.GetOccurrences(from, to).Returns(events);
+        
+        // Act
+        var result = _sut.GetOccurrences(from, to);
+        
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        var okResult = (OkObjectResult)result;
+        okResult.StatusCode.Should().Be(200);
+        okResult.Value.Should().Be(events);
+    }
+#endregion
+
+#region DeleteEvent
+    [Fact]
+    public async Task DeleteEvent_Should_ReturnNotFound_When_EventNotFound()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        _service.DeleteEventAsync(Arg.Is<Guid>(e => e == id), CancellationToken.None).Returns(false);
+        
+        // Act
+        var result = await _sut.DeleteEvent(id, CancellationToken.None);
+        
+        // Assert
+        result.Should().BeOfType<NotFoundObjectResult>();
+        var conflictResult = (NotFoundObjectResult)result;
+        conflictResult.StatusCode.Should().Be(404);
+        var message = conflictResult.Value;
+        message.Should().Be($"Event with id {id} not found.");
+    }
+
+    [Fact]
+    public async Task DeleteEvent_Should_ReturnNoContent_When_EventFound()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        _service.DeleteEventAsync(Arg.Is<Guid>(e => e == id), CancellationToken.None).Returns(true);
+        
+        // Act
+        var result = await _sut.DeleteEvent(id, CancellationToken.None);
+        
+        // Assert
+        result.Should().BeOfType<NoContentResult>();
+        var noContentResult = (NoContentResult)result;
+        noContentResult.StatusCode.Should().Be(204);
+    }
+#endregion
+    
+#region UpdateEvent
+
+    [Fact]
+    public async Task UpdateEvent_Should_ReturnsNotFound_When_EventNotFound()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var request = _fixture.Create<UpdateEventRequest>();
+        _service.UpdateEventAsync(id, request, CancellationToken.None).Returns(false);
+        
+        // Act
+        var result = await _sut.UpdateEvent(id, request, CancellationToken.None);
+        
+        // Assert
+        result.Should().BeOfType<NotFoundObjectResult>();
+        var objectResult = (NotFoundObjectResult)result;
+        objectResult.StatusCode.Should().Be(404);
+        var message = objectResult.Value;
+        message.Should().Be($"Event with id {id} not found");
+    }
+    
+    [Fact]
+    public async Task UpdateEvent_Should_ReturnsNoContent_When_EventFound()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var request = _fixture.Create<UpdateEventRequest>();
+        _service.UpdateEventAsync(id, request, CancellationToken.None).Returns(true);
+        
+        // Act
+        var result = await _sut.UpdateEvent(id, request, CancellationToken.None);
+        
+        // Assert
+        result.Should().BeOfType<NoContentResult>();
+        var noContentResult = (NoContentResult)result;
+        noContentResult.StatusCode.Should().Be(204);
+    }
+#endregion
 }

@@ -1,6 +1,8 @@
 using Calendar.Api.Options;
 using FluentValidation;
 
+namespace Calendar_Service.Validators;
+
 public class RabbitMqOptionsValidator : AbstractValidator<RabbitMqOptions>
 {
     public RabbitMqOptionsValidator()

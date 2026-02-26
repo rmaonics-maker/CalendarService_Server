@@ -6,5 +6,15 @@
     &lt;TestId&gt;xUnit::7B8E43F3-55A5-4838-AF42-5E3EF1B8F6AE::net10.0::Calendar.UnitTests.Controllers.EventsControllerTests.Create_Should_ReturnsCreatedAtAction_When_ValidRequest&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::7B8E43F3-55A5-4838-AF42-5E3EF1B8F6AE::net10.0::Calendar.UnitTests.Controllers.EventsControllerTests.Create_Should_ReturnsBadRequest_When_ValidationFails&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::7B8E43F3-55A5-4838-AF42-5E3EF1B8F6AE::net10.0::Calendar.UnitTests.Controllers.EventsControllerTests&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::7B8E43F3-55A5-4838-AF42-5E3EF1B8F6AE::net10.0::Calendar.UnitTests.Controllers.UsersControllerTests.Create_Should_ReturnsValidationProblem_When_ValidationNotValid&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::7B8E43F3-55A5-4838-AF42-5E3EF1B8F6AE::net10.0::Calendar.UnitTests.Controllers.UsersControllerTests.Create_Should_ReturnsConflict_When_InvalidOperation&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::7B8E43F3-55A5-4838-AF42-5E3EF1B8F6AE::net10.0::Calendar.UnitTests.Controllers.UsersControllerTests.Create_Should_ReturnsCreated_When_CreateUser&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::7B8E43F3-55A5-4838-AF42-5E3EF1B8F6AE::net10.0::Calendar.UnitTests.Controllers.UsersControllerTests.GetUserHistory_Should_ReturnsNotFound_When_UserNotFound&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::7B8E43F3-55A5-4838-AF42-5E3EF1B8F6AE::net10.0::Calendar.UnitTests.Controllers.UsersControllerTests.GetUserHistory_Should_ReturnsOk_When_UserFound&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::7B8E43F3-55A5-4838-AF42-5E3EF1B8F6AE::net10.0::Calendar.UnitTests.Validators.RabbitMqOptionsValidatorTests.Host_Should_HaveError_When_Empty&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::7B8E43F3-55A5-4838-AF42-5E3EF1B8F6AE::net10.0::Calendar.UnitTests.Validators.RabbitMqOptionsValidatorTests.Host_Should_HaveError_When_WhiteSpaceOnly&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::7B8E43F3-55A5-4838-AF42-5E3EF1B8F6AE::net10.0::Calendar.UnitTests.Validators.RabbitMqOptionsValidatorTests.Host_Should_Pass_When_Valid&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::7B8E43F3-55A5-4838-AF42-5E3EF1B8F6AE::net10.0::Calendar.UnitTests.Validators.RabbitMqOptionsValidatorTests.Username_Should_HaveError_When_Empty&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::7B8E43F3-55A5-4838-AF42-5E3EF1B8F6AE::net10.0::Calendar.UnitTests.Validators.RabbitMqOptionsValidatorTests&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

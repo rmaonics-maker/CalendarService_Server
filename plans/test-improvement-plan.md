@@ -67,7 +67,7 @@
 #### 1.1 Раскомментировать и исправить тесты в Calendar.IntegrationTests
 
 **BookingTests.cs**
-- [ ] Раскомментировать тест `Post_Booking_ReturnsCreatedAndResistInDb`
+- [х] Раскомментировать тест `Post_Booking_ReturnsCreatedAndResistInDb`
 - [ ] Убедиться, что тест корректно проверяет создание события
 - [ ] Добавить проверки для сообщения `EventCreated` в шину сообщений
 

@@ -5,9 +5,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Testcontainers.PostgreSql;
-using Calendar_Service.Data; 
+using Calendar_Service.Data;
 using Calendar.IntegrationTests.Helpers;
+using MassTransit;
+using MassTransit.Testing;
 using Microsoft.AspNetCore.Authentication;
+using NotificationService;
 
 namespace Calendar.IntegrationTests
 {
@@ -20,11 +23,14 @@ namespace Calendar.IntegrationTests
             .Build();
 
         public string DbConnectionString => _dbContainer.GetConnectionString();
-        //public ITestHarness? Harness { get; private set; }
+        public ITestHarness? Harness { get; private set; }
         
         public new async Task DisposeAsync()
         {
-            //await Harness?.Stop();
+            if (Harness != null)
+            {
+                await Harness.Stop();
+            }
             await _dbContainer.StopAsync();
         }
         public async Task InitializeAsync()
@@ -34,9 +40,12 @@ namespace Calendar.IntegrationTests
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            // Устанавливаем переменную окружения для отключения Health Checks в тестах
+            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Testing");
+            
             builder.ConfigureTestServices(services =>
             {
-                services.RemoveAll(typeof(DbContextOptions<ApplicationDbContext>));
+                services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
                 services.AddDbContext<ApplicationDbContext>(options =>
                 {
                     options.UseNpgsql(_dbContainer.GetConnectionString())
@@ -50,43 +59,39 @@ namespace Calendar.IntegrationTests
                })
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
                    TestAuthHandler.AuthenticationScheme, options => { });
-                
-                // Убираем основную конфигурацию MassTransit из тестовой среды
-                //services.RemoveMassTransit();
-               /* 
-                // Используем упрощенную конфигурацию для тестов
-                services.AddMassTransitTestHarness(cfg =>
-                {
-                    //cfg.AddConsumer<NotificationConsumer>();
-                    
-                    cfg.UsingInMemory((context, config) =>
-                    {
-                        config.ConfigureEndpoints(context);
-                    });
-                });
-*/
-                var serviceProvider = services.BuildServiceProvider();
-                using var scope = serviceProvider.CreateScope();
-                
-                
-                    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                    try
-                    {
-                        dbContext.Database.Migrate();
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Migration Error: {ex}");
-                        throw;
-                    }
-                
-                
-                //Harness = serviceProvider.GetRequiredService<ITestHarness>();
-                //Harness.Start().GetAwaiter().GetResult();
-                Console.WriteLine("MassTransit Test Harness initialized");
-            });
+               
+               // удаление существующей конфигурации MassTransit
+               services.RemoveAll<IBusControl>();
+               services.RemoveAll<IBus>();
+               services.RemoveAll<IBusRegistrationContext>();
+               
+               // и добавление туда харнеса всемогучего
+               services.AddMassTransitTestHarness(x =>
+               {
+                   x.SetKebabCaseEndpointNameFormatter();
+                   
+                   // Регистрация NotificationConsumer для тестирования
+                   x.AddConsumer<NotificationConsumer>();
+                   
+                   x.AddEntityFrameworkOutbox<ApplicationDbContext>(o =>
+                   {
+                       o.UsePostgres();
+                       o.UseBusOutbox();
+                       o.DuplicateDetectionWindow = TimeSpan.FromMinutes(30);
+                       o.QueryDelay = TimeSpan.FromSeconds(2);
+                       o.QueryMessageLimit = 100;
+                   });
 
-            
+                   x.AddConfigureEndpointsCallback((context, name, cfg) =>
+                   {
+                       cfg.UseEntityFrameworkOutbox<ApplicationDbContext>(context);
+                   });
+                   x.UsingInMemory((context, cfg) =>
+                   {
+                       cfg.ConfigureEndpoints(context);
+                   });
+               });
+            });
         }
     }
 }

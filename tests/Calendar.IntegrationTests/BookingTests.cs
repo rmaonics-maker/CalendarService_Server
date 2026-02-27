@@ -1,15 +1,16 @@
 ﻿using System.Net.Http.Json;
 using Calendar.Contracts;
-using MassTransit;
-using Xunit;
+using FluentAssertions;
+using MassTransit.Testing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Calendar.IntegrationTests
 {
     [Collection(nameof(IntegrationTestCollection))]
     public class BookingTests(CalendarApiFactory factory) : BaseIntegrationTest(factory)
     {
-        //[Fact]
-        public async Task Post_Booking_ReturnsCreatedAndResistInDb()
+        [Fact]
+        public async Task Post_Should_ReturnsCreatedAndResistInDb_When_PostBookingEvent()
         {
             // Arrange
             var user = await CreateUserInDbAsync();
@@ -25,17 +26,45 @@ namespace Calendar.IntegrationTests
             // Act
             var response = await Client.PostAsJsonAsync("/api/v1/events", createEventRequest);
 
-            // Assert
-            // 1. Проверяем, что API вернул успешный статус
-            Assert.Equal(System.Net.HttpStatusCode.Created, response.StatusCode);
+            // Assert - HTTP Response
+            response.StatusCode.Should().Be(System.Net.HttpStatusCode.Created,
+                "API должен вернуть статус 201 Created при успешном создании события");
 
-            // 2. Проверяем, что бронирование сохранилось в базе данных
+            // Assert - Database
             var bookingInDb = DbContext.Bookings.FirstOrDefault(b => b.UserId == user.Id);
-            Assert.NotNull(bookingInDb);
+            bookingInDb.Should().NotBeNull("Бронирование должно быть сохранено в базе данных");
+            bookingInDb!.Title.Should().Be(createEventRequest.Title, "Заголовок должен соответствовать запросу");
+            bookingInDb.UserId.Should().Be(user.Id, "UserId должен соответствовать созданному пользователю");
+            bookingInDb.RoomId.Should().BeGreaterThan(0, "RoomId должен быть положительным числом");
+            
+            // Проверяем, что период бронирования был создан (не пустой)
+            bookingInDb.Period.Should().NotBeNull("Период бронирования должен быть заполнен");
+            
+            // Проверяем, что баланс пользователя уменьшился на стоимость бронирования (10.0)
+            var updatedUser = DbContext.Users.FirstOrDefault(u => u.Id == user.Id);
+            updatedUser.Should().NotBeNull("Пользователь должен существовать");
+            updatedUser!.Balance.Should().Be(user.Balance - 10.0m, "Баланс должен уменьшиться на стоимость бронирования");
 
-            // 3. Проверяем, что сообщение было опубликовано и потреблено
-            //var consumed = await Harness.Consumed.Any<EventCreated>(x => x.Context.Message.UserId == user.Id);
-            //Assert.True(consumed, "Сообщение EventCreated не было потреблено");
+            // Assert - MassTransit Message Bus
+            // Проверяем, что сообщение было отправлено в шину
+            var messageSent = await Harness.Published.Any<EventCreated>(x => x.Context.Message.UserId == user.Id);
+            messageSent.Should().BeTrue("Сообщение EventCreated должно быть опубликовано в шине сообщений");
+
+            // Получаем опубликованное сообщение для детальной проверки
+            var publishedMessages = new List<IPublishedMessage<EventCreated>>();
+            await foreach (var message in Harness.Published.SelectAsync<EventCreated>(x => x.Context.Message.UserId == user.Id))
+            {
+                publishedMessages.Add(message);
+            }
+            
+            publishedMessages.Should().HaveCount(1, "Должно быть опубликовано ровно одно сообщение EventCreated");
+            var eventCreatedMessage = publishedMessages.First();
+            
+            eventCreatedMessage.Context.Message.Title.Should().Be(createEventRequest.Title, "Заголовок в сообщении должен соответствовать запросу");
+            eventCreatedMessage.Context.Message.UserId.Should().Be(user.Id, "UserId в сообщении должен соответствовать созданному пользователю");
+            eventCreatedMessage.Context.Message.EventId.Should().NotBeEmpty("EventId должен быть заполнен");
+            eventCreatedMessage.Context.Message.OccurredAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(10),
+                "OccuredAt должен быть близок к текущему времени");
         }
     }
 }

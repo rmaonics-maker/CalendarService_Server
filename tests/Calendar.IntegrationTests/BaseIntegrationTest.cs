@@ -13,7 +13,7 @@ public class BaseIntegrationTest : IAsyncLifetime
     protected readonly HttpClient Client;
     protected readonly IServiceScope Scope;
     protected readonly ApplicationDbContext DbContext;
-    //protected readonly ITestHarness Harness;
+    protected ITestHarness? Harness;
     private readonly CalendarApiFactory _factory;
 
     private static Respawner? _respawner;
@@ -29,20 +29,24 @@ public class BaseIntegrationTest : IAsyncLifetime
 
         Scope = factory.Services.CreateScope();
         DbContext = Scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        //Harness = factory.Harness;
     }
 
-    public Task DisposeAsync()
+    public async Task DisposeAsync()
     {
+        if (Harness != null)
+        {
+            await Harness.Stop();
+        }
         Scope.Dispose();
-        return Task.CompletedTask;
     }
 
     public async Task InitializeAsync()
     {
         Console.WriteLine("Starting MassTransit Test Harness...");
-        //await Harness.Start();
+        Harness = _factory.Services.GetRequiredService<ITestHarness>();
+        await Harness.Start();
         Console.WriteLine("MassTransit Test Harness started successfully");
+        
         await using var connection = new Npgsql.NpgsqlConnection(_factory.DbConnectionString);
         await connection.OpenAsync();
 

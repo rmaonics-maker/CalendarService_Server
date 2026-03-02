@@ -18,5 +18,6 @@
     &lt;TestId&gt;xUnit::7B8E43F3-55A5-4838-AF42-5E3EF1B8F6AE::net10.0::Calendar.UnitTests.Validators.RabbitMqOptionsValidatorTests&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::0A6FE06E-1AA2-4580-A102-A6E25C203EFF::net10.0::Calendar.IntegrationTests.BookingTests&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::0A6FE06E-1AA2-4580-A102-A6E25C203EFF::net10.0::Calendar.IntegrationTests.UserTests.Should_SaveToDatabase_When_CreateUser&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::0A6FE06E-1AA2-4580-A102-A6E25C203EFF::net10.0::Calendar.IntegrationTests.HealthCheckTests.Health_ShouldReturnOk&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

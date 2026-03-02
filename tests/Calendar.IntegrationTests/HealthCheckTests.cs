@@ -12,7 +12,7 @@ namespace Calendar.IntegrationTests
         {
         }
 
-        //[Fact]
+        [Fact]
         public async Task Health_ShouldReturnOk()
         {
             // Arrange

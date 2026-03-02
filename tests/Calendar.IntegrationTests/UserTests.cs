@@ -8,11 +8,10 @@ namespace Calendar.IntegrationTests;
 [Collection(nameof(IntegrationTestCollection))]
 public class UserTests(CalendarApiFactory factory) : BaseIntegrationTest(factory)
 {
-    //[Fact]
-    public async Task CreateUser_ShouldSaveToDatabase()
+    [Fact]
+    public async Task Should_SaveToDatabase_When_CreateUser()
     {
         // 1. Arrange
-        // Генерируем уникальные данные, чтобы тесты не конфликтовали
         var uniqueEmail = $"test_user_{Guid.NewGuid()}@example.com";
         var newUser = new
         {
@@ -21,7 +20,6 @@ public class UserTests(CalendarApiFactory factory) : BaseIntegrationTest(factory
         };
 
         // 2. Act
-        // Отправляем POST запрос в API. 
         var response = await Client.PostAsJsonAsync("/api/v1/users", newUser);
 
         // 3. Assert (HTTP Level)

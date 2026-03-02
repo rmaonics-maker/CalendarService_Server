@@ -10,6 +10,7 @@ using Calendar.IntegrationTests.Helpers;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using NotificationService;
 
 namespace Calendar.IntegrationTests
@@ -36,6 +37,14 @@ namespace Calendar.IntegrationTests
         public async Task InitializeAsync()
         {
             await _dbContainer.StartAsync();
+            
+            // Применяем миграции к тестовой базе данных
+            var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+            optionsBuilder.UseNpgsql(_dbContainer.GetConnectionString())
+                .UseSnakeCaseNamingConvention();
+            
+            await using var context = new ApplicationDbContext(optionsBuilder.Options);
+            await context.Database.MigrateAsync();
         }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -59,38 +68,33 @@ namespace Calendar.IntegrationTests
                })
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
                    TestAuthHandler.AuthenticationScheme, options => { });
-               
-               // удаление существующей конфигурации MassTransit
-               services.RemoveAll<IBusControl>();
-               services.RemoveAll<IBus>();
-               services.RemoveAll<IBusRegistrationContext>();
-               
-               // и добавление туда харнеса всемогучего
-               services.AddMassTransitTestHarness(x =>
-               {
-                   x.SetKebabCaseEndpointNameFormatter();
-                   
-                   // Регистрация NotificationConsumer для тестирования
-                   x.AddConsumer<NotificationConsumer>();
-                   
-                   x.AddEntityFrameworkOutbox<ApplicationDbContext>(o =>
-                   {
-                       o.UsePostgres();
-                       o.UseBusOutbox();
-                       o.DuplicateDetectionWindow = TimeSpan.FromMinutes(30);
-                       o.QueryDelay = TimeSpan.FromSeconds(2);
-                       o.QueryMessageLimit = 100;
-                   });
 
-                   x.AddConfigureEndpointsCallback((context, name, cfg) =>
+               services.Configure<HealthCheckServiceOptions>(options =>
+               {
+                   var mtRegistration = options.Registrations.FirstOrDefault(x =>
+                       x.Name == "masstransit-bus");
+
+                   if (mtRegistration != null)
                    {
-                       cfg.UseEntityFrameworkOutbox<ApplicationDbContext>(context);
-                   });
-                   x.UsingInMemory((context, cfg) =>
-                   {
-                       cfg.ConfigureEndpoints(context);
-                   });
+                       options.Registrations.Remove(mtRegistration);
+                   }
                });
+               
+               services.AddMassTransitTestHarness(x =>
+                {
+                    x.SetKebabCaseEndpointNameFormatter();
+                    
+                    // Регистрация NotificationConsumer для тестирования
+                    x.AddConsumer<NotificationConsumer>();
+                    
+                    // В тестовой среде не используем Outbox, так как он несовместим с InMemory transport
+                    // Outbox предназначен для production с реальными message brokers
+                    
+                    x.UsingInMemory((context, cfg) =>
+                    {
+                        cfg.ConfigureEndpoints(context);
+                    });
+                });
             });
         }
     }

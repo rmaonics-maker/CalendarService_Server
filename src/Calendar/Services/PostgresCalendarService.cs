@@ -55,10 +55,10 @@ public class PostgresCalendarService(ApplicationDbContext context, ILogger<Postg
             
             await publishEndpoint.Publish(new EventCreated
             {
-                EventId = evt.Id,
+                EventId = booking.Id,
                 Title = evt.Title,
                 UserId = evt.UserId,
-                UserEmail = user.Email,       
+                UserEmail = user.Email,
                 OccurredAt = DateTime.UtcNow
             }, token);
 

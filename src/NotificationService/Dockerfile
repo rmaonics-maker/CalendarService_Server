@@ -19,4 +19,7 @@ RUN dotnet publish "NotificationService.csproj" -c Release -o /app/publish /p:Us
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD pgrep -f dotnet || exit 1
 ENTRYPOINT ["dotnet", "NotificationService.dll"]

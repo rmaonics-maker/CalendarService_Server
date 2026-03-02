@@ -2,6 +2,7 @@
 using Calendar.Contracts;
 using FluentAssertions;
 using MassTransit.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Calendar.IntegrationTests
@@ -24,7 +25,13 @@ namespace Calendar.IntegrationTests
                 UserId: user.Id);
 
             // Act
-            var response = await Client.PostAsJsonAsync("/api/v1/events", createEventRequest);
+            var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/events")
+            {
+                Content = JsonContent.Create(createEventRequest)
+            };
+            request.Headers.Add("Idempotency-Key", Guid.NewGuid().ToString());
+            
+            var response = await Client.SendAsync(request);
 
             // Assert - HTTP Response
             response.StatusCode.Should().Be(System.Net.HttpStatusCode.Created,
@@ -41,7 +48,8 @@ namespace Calendar.IntegrationTests
             bookingInDb.Period.Should().NotBeNull("Период бронирования должен быть заполнен");
             
             // Проверяем, что баланс пользователя уменьшился на стоимость бронирования (10.0)
-            var updatedUser = DbContext.Users.FirstOrDefault(u => u.Id == user.Id);
+            // Используем AsNoTracking для получения свежих данных из базы без кэширования
+            var updatedUser = DbContext.Users.AsNoTracking().FirstOrDefault(u => u.Id == user.Id);
             updatedUser.Should().NotBeNull("Пользователь должен существовать");
             updatedUser!.Balance.Should().Be(user.Balance - 10.0m, "Баланс должен уменьшиться на стоимость бронирования");
 

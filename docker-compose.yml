@@ -17,9 +17,9 @@ services:
       retries: 5
     restart: unless-stopped
 
-    secrets:
-    - source: db_passwors_secret
-      target: Database__Password
+#    secrets:
+#    - source: db_passwors_secret
+#      target: Database__Password
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -42,6 +42,12 @@ services:
     build:
       context: .
       dockerfile: src/Calendar/Dockerfile
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
     container_name: calendar-api-1
     environment:
@@ -69,9 +75,14 @@ services:
   calendar-worker:
     build:
       context: .
-      dockerfile: tests/NotificationService/Dockerfile
-
-    container_name: calendar-worker-1
+      dockerfile: src/NotificationService/Dockerfile
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f dotnet || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+      container_name: calendar-worker-1
 
     environment:
       RabbitMq__Host: ${RABBIT_HOST}
@@ -94,6 +105,11 @@ services:
 
   jaeger:
     image: jaeger-tracing/all-in-one:latest
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:16686"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     container_name: jaeger
     environment:
       - COLLECTOR_OTLP_ENABLED=true 
@@ -109,7 +125,7 @@ networks:
     driver: bridge
 
 secrets:
-  db_passwors_secret:
+  db_password_secret:
     file: ./secrets/db_password.txt
   api_key_secret:
     file: ./secrets/api_key.txt

@@ -64,3 +64,4 @@ nunit-*.xml
 src/Calendar/secrets/db_password.txt
 .roo/
 .roomodes
+plans/

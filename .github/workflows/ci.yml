@@ -110,8 +110,6 @@ jobs:
         push: true
         build-args: |
           PROJECT_NAME=Calendar
-          PROJECT_FILE_NAME=Calendar_Service.csproj
-          DLL_NAME=Calendar_Service
         tags: |
           ${{ env.IMAGE_NAME }}:latest
           ${{ env.IMAGE_NAME }}:${{ github.sha }}

@@ -1,38 +1,25 @@
-# --- STAGE 1: Prepare Restore Graph (dotnet-subset) ---
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS prepare-restore
-WORKDIR /source
-
-RUN dotnet tool install --global dotnet-subset
-
-COPY . .
-
-ARG PROJECT_NAME
-
-# Определяем правильное имя файла проекта для Calendar сервиса
-ARG PROJECT_FILE_NAME=Calendar_Service.csproj
-
-RUN /root/.dotnet/tools/dotnet-subset restore "src/$PROJECT_NAME/$PROJECT_FILE_NAME" \
-    --root-directory /source \
-    --output /tmp/restore_subset
-
-# --- STAGE 2: Build & Publish ---
+# --- STAGE 1: Build & Publish ---
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY --from=prepare-restore /tmp/restore_subset .
-RUN dotnet restore
+# Копируем файлы проектов для восстановления зависимостей
+COPY ["src/Calendar/Calendar_Service.csproj", "src/Calendar/"]
+COPY ["src/Contracts/Calendar.Contracts.csproj", "src/Contracts/"]
 
+# Восстанавливаем зависимости
+RUN dotnet restore "src/Calendar/Calendar_Service.csproj"
+
+# Копируем весь исходный код
 COPY . .
 
 ARG PROJECT_NAME
-ARG PROJECT_FILE_NAME=Calendar_Service.csproj
 WORKDIR "/src/src/$PROJECT_NAME"
 
-RUN dotnet publish "$PROJECT_FILE_NAME" -c Release -o /app/publish /p:UseAppHost=false --no-restore
+# Собираем и публикуем проект
+RUN dotnet publish "Calendar_Service.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# Определяем имя выходной DLL (без расширения .csproj)
-ARG DLL_NAME=Calendar_Service
-RUN mv "/app/publish/$DLL_NAME.dll" "/app/publish/App.dll"
+# Переименовываем DLL для универсального entrypoint
+RUN mv "/app/publish/Calendar_Service.dll" "/app/publish/App.dll"
 
 # --- STAGE 3: Runtime (Chiseled) ---
 # Используем Chiseled образ для максимальной безопасности (нет shell, нет root по умолчанию)

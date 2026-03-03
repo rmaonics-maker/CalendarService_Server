@@ -92,6 +92,21 @@ namespace Calendar.IntegrationTests
                     
                     x.UsingInMemory((context, cfg) =>
                     {
+                        // Политика повторных попыток, аналогичная production конфигурации
+                        cfg.UseMessageRetry(r =>
+                        {
+                            r.Exponential(5, TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(2),
+                                TimeSpan.FromMilliseconds(200));
+                            
+                            // Фильтрация исключений
+                            r.Handle<TimeoutException>();
+                            r.Handle<HttpRequestException>(ex =>
+                                ex.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable);
+                            
+                            r.Ignore<ArgumentException>();
+                            r.Ignore<NullReferenceException>();
+                        });
+                        
                         cfg.ConfigureEndpoints(context);
                     });
                 });

@@ -249,6 +249,10 @@ public class CreateEventRequestValidatorTest
     {
         // Arrange
         var request = _fixture.Build<CreateEventRequest>()
+            .With(x=>x.Title, "Test title")
+            .With(x=>x.Description, "Test discription")
+            .With(x=>x.Duration, TimeSpan.FromHours(6))
+            .With(x=>x.StartTime, DateTimeOffset.UtcNow.AddDays(2))
             .Create();
         // Act
         var result = _validator.TestValidate(request);

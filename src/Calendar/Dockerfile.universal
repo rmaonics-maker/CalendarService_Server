@@ -8,7 +8,10 @@ COPY . .
 
 ARG PROJECT_NAME
 
-RUN /root/.dotnet/tools/dotnet-subset restore "src/$PROJECT_NAME/$PROJECT_NAME.csproj" \
+# Определяем правильное имя файла проекта для Calendar сервиса
+ARG PROJECT_FILE_NAME=Calendar_Service.csproj
+
+RUN /root/.dotnet/tools/dotnet-subset restore "src/$PROJECT_NAME/$PROJECT_FILE_NAME" \
     --root-directory /source \
     --output /tmp/restore_subset
 
@@ -22,11 +25,14 @@ RUN dotnet restore
 COPY . .
 
 ARG PROJECT_NAME
+ARG PROJECT_FILE_NAME=Calendar_Service.csproj
 WORKDIR "/src/src/$PROJECT_NAME"
 
-RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false --no-restore
+RUN dotnet publish "$PROJECT_FILE_NAME" -c Release -o /app/publish /p:UseAppHost=false --no-restore
 
-RUN mv "/app/publish/$PROJECT_NAME.dll" "/app/publish/App.dll"
+# Определяем имя выходной DLL (без расширения .csproj)
+ARG DLL_NAME=Calendar_Service
+RUN mv "/app/publish/$DLL_NAME.dll" "/app/publish/App.dll"
 
 # --- STAGE 3: Runtime (Chiseled) ---
 # Используем Chiseled образ для максимальной безопасности (нет shell, нет root по умолчанию)

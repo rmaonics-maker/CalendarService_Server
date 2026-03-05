@@ -1,0 +1,12 @@
+
+services:
+  notification-worker:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-rmaonics-maker}/${REPO_NAME:-calendarservice}-worker:latest
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - RabbitMq__Host=production-rabbitmq-cluster
+      - RabbitMq__Port=5672
+      - RabbitMq__Username=${RABBITMQ_USERNAME:-guest}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD:-guest}
+    stop_grace_period: 30s

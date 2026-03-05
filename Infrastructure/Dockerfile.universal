@@ -5,23 +5,28 @@ WORKDIR /src
 # Копируем файлы проектов для восстановления зависимостей
 COPY ["src/Calendar/Calendar_Service.csproj", "src/Calendar/"]
 COPY ["src/Contracts/Calendar.Contracts.csproj", "src/Contracts/"]
+COPY ["src/NotificationService/NotificationService.csproj", "src/NotificationService/"]
 
 # Восстанавливаем зависимости
 RUN dotnet restore "src/Calendar/Calendar_Service.csproj"
+RUN dotnet restore "src/NotificationService/NotificationService.csproj"
 
 # Копируем весь исходный код
 COPY . .
 
 ARG PROJECT_NAME
+ARG PROJECT_FILE
 WORKDIR "/src/src/$PROJECT_NAME"
 
 # Собираем и публикуем проект
-RUN dotnet publish "Calendar_Service.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "$PROJECT_FILE" -c Release -o /app/publish /p:UseAppHost=false
 
-# Переименовываем DLL для универсального entrypoint
-RUN mv "/app/publish/Calendar_Service.dll" "/app/publish/App.dll"
+# Переименовываем DLL и конфигурационные файлы для универсального entrypoint
+RUN mv "/app/publish/$(basename $PROJECT_FILE .csproj).dll" "/app/publish/App.dll" && \
+    mv "/app/publish/$(basename $PROJECT_FILE .csproj).runtimeconfig.json" "/app/publish/App.runtimeconfig.json" && \
+    mv "/app/publish/$(basename $PROJECT_FILE .csproj).deps.json" "/app/publish/App.deps.json"
 
-# --- STAGE 3: Runtime (Chiseled) ---
+# --- STAGE 2: Runtime (Chiseled) ---
 # Используем Chiseled образ для максимальной безопасности (нет shell, нет root по умолчанию)
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled AS final
 WORKDIR /app

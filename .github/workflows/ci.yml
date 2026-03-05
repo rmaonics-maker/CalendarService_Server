@@ -106,7 +106,7 @@ jobs:
       uses: docker/build-push-action@v6
       with:
         context: .
-        file: src/Calendar/Dockerfile.universal
+        file: Infrastructure/Dockerfile.universal
         push: true
         build-args: |
           PROJECT_NAME=Calendar

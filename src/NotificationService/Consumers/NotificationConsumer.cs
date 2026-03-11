@@ -1,12 +1,10 @@
-﻿using Calendar.Contracts;
+﻿using Calendar.Contracts.Events;
 using MassTransit;
 
 namespace NotificationService;
 
 public class NotificationConsumer(ILogger<NotificationConsumer> logger) : IConsumer<EventCreated>
 {
-    //private readonly ILogger<NotificationConsumer> _logger = logger;
-
     public Task Consume(ConsumeContext<EventCreated> context)
     {
         var message = context.Message;

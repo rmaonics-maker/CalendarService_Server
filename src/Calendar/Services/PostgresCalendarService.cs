@@ -1,4 +1,5 @@
 ﻿using Calendar.Contracts;
+using Calendar.Contracts.Events;
 using Calendar_Service.Data;
 using Calendar_Service.Models;
 using Calendar_Service.Specifications;

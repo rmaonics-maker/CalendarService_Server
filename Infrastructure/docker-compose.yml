@@ -3,23 +3,58 @@ services:
     image: postgres:15
     container_name: calendar-db-1
     environment:
-      POSTGRES_USER: ${DB_USER}       # Берет из .env
+      POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_DB: ${CALENDAR_DB_NAME}
     ports:
-      - "5432:5432"
+      - "${CALENDAR_DB_PORT}:5432"
     networks:
       - calendar-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 40s
     restart: unless-stopped
 
-#    secrets:
-#    - source: db_passwors_secret
-#      target: Database__Password
+  notification-db:
+    image: postgres:15
+    container_name: notification-db-1
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${NOTIFICATION_DB_NAME}
+    ports:
+      - "${NOTIFICATION_DB_PORT}:5432"
+    networks:
+      - calendar-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+
+  auth-db:
+    image: postgres:15
+    container_name: auth-db-1
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${AUTH_DB_NAME}
+    ports:
+      - "${AUTH_DB_PORT}:5432"
+    networks:
+      - calendar-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -40,7 +75,7 @@ services:
 
   calendar-api:
     build:
-      context: .
+      context: ..
       dockerfile: src/Calendar/Dockerfile
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -48,12 +83,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
     container_name: calendar-api-1
     environment:
-      ConnectionStrings__DefaultConnection: "Host=${DB_HOST};Port=5432;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
-      
-      # Настройки RabbitMQ для маппинга в C# класс
+      ConnectionStrings__DefaultConnection: "Host=${CALENDAR_DB_HOST};Port=5432;Database=${CALENDAR_DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
       RabbitMq__Host: ${RABBIT_HOST}
       RabbitMq__Username: ${RABBIT_USER}
       RabbitMq__Password: ${RABBIT_PASS}
@@ -74,7 +106,7 @@ services:
 
   calendar-worker:
     build:
-      context: .
+      context: ..
       dockerfile: src/NotificationService/Dockerfile
     healthcheck:
       test: ["CMD-SHELL", "pgrep -f dotnet || exit 1"]
@@ -82,29 +114,52 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-      container_name: calendar-worker-1
-
+    container_name: calendar-worker-1
     environment:
       RabbitMq__Host: ${RABBIT_HOST}
       RabbitMq__Username: ${RABBIT_USER}
       RabbitMq__Password: ${RABBIT_PASS}
       OTEL_EXPLORER_OTLP_ENDPOINT: "http://jaeger:4317"
       OTEL_SERVICENAME: "Calendar.Worker"
-      
-      ConnectionStrings__DefaultConnection: "Host=calendar-db;Port=5432;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
-
+      ConnectionStrings__DefaultConnection: "Host=${NOTIFICATION_DB_HOST};Port=5432;Database=${NOTIFICATION_DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
     depends_on:
        rabbitmq:
           condition: service_healthy
-       calendar-db:
+       notification-db:
         condition: service_healthy
-
     networks:
       - calendar-net
     restart: on-failure
 
+  calendar-auth-api:
+    build:
+      context: ..
+      dockerfile: src/Calendar.Auth.API/Dockerfile
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    container_name: calendar-auth-api-1
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=${AUTH_DB_HOST};Port=5432;Database=${AUTH_DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
+      RabbitMq__Host: ${RABBIT_HOST}
+      RabbitMq__Username: ${RABBIT_USER}
+      RabbitMq__Password: ${RABBIT_PASS}
+    depends_on:
+      auth-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - calendar-net
+    restart: on-failure
+    ports:
+      - "8081:8081"
+
   jaeger:
-    image: jaeger-tracing/all-in-one:latest
+    image: jaegertracing/all-in-one:latest
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:16686"]
       interval: 30s

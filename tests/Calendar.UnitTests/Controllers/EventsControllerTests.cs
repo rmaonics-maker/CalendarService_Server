@@ -4,6 +4,7 @@ using Calendar_Service.Controllers;
 using Calendar_Service.Models;
 using Calendar_Service.Services;
 using Calendar.Contracts;
+using Calendar.Contracts.Events;
 using FluentAssertions;
 using FluentValidation;
 using MassTransit;

@@ -65,3 +65,5 @@ src/Calendar/secrets/db_password.txt
 .roo/
 .roomodes
 plans/
+src/Calendar.Auth.API/secrets/
+.idea/

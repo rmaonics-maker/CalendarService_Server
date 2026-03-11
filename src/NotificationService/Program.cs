@@ -1,11 +1,15 @@
 using System.Net;
 using MassTransit;
 using MassTransit.Monitoring;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using NotificationService.Options;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using NotificationService.Consumers;
+using NotificationService.Data;
+using NotificationService.Services;
 
 namespace NotificationService;
 
@@ -23,19 +27,33 @@ public class Program
             x.SetKebabCaseEndpointNameFormatter();
 
             x.AddConsumer<NotificationConsumer>();
+            x.AddConsumer<UserRegisteredConsumer>();
+
+            x.AddEntityFrameworkOutbox<NotificationDbContext>(o =>
+            {
+                o.UsePostgres();
+                o.UseBusOutbox();
+            });
 
             x.UsingRabbitMq((context, cfg) =>
             {
                     // настройки
                 var options = context.GetRequiredService<IOptions<RabbitMqOptions>>().Value;
                 options.Validate();
+                
                 cfg.Host(options.Host, options.VirtualHost, h =>
                 {
                     h.Username(options.Username);
                     h.Password(options.Password);
                 });
 
-                cfg.ConfigureEndpoints(context);
+                //cfg.ConfigureEndpoints(context);
+
+                cfg.ReceiveEndpoint("notification-user-registered", e =>
+                {
+                    e.UseEntityFrameworkOutbox<NotificationDbContext>(context);
+                    e.ConfigureConsumer<UserRegisteredConsumer>(context);
+                });
                 
                     // политика повторов
                 cfg.UseMessageRetry(r =>
@@ -80,7 +98,14 @@ public class Program
             .WithMetrics(providerBuilder => providerBuilder
                 .AddMeter(InstrumentationOptions.MeterName)
                 .AddAspNetCoreInstrumentation());
+
+        builder.Services.AddScoped<IEmailService, DummyEmailService>();
+
+        builder.Services.AddDbContext<NotificationDbContext>(options=>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+        .UseSnakeCaseNamingConvention());
         
+
         var host = builder.Build();
         host.Run();
     }

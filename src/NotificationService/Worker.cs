@@ -1,5 +1,5 @@
-namespace NotificationService
-{
+namespace NotificationService;
+
     public class Worker(ILogger<Worker> logger) : BackgroundService
     {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -14,4 +14,4 @@ namespace NotificationService
             }
         }
     }
-}
+

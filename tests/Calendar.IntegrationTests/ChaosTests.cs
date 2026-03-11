@@ -1,4 +1,4 @@
-﻿using Calendar.Contracts;
+﻿using Calendar.Contracts.Events;
 using MassTransit;
 using NotificationService;
 

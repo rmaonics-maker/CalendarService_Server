@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Calendar.Contracts;
+using Calendar.Contracts.Events;
 using Calendar_Service.Models;
 
 namespace Calendar_Service.Mapping;

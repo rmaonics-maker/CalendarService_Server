@@ -1,9 +1,9 @@
 ﻿using System.Net.Http.Json;
 using Calendar.Contracts;
+using Calendar.Contracts.Events;
 using FluentAssertions;
 using MassTransit.Testing;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Calendar.IntegrationTests
 {

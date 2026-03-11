@@ -1,6 +1,6 @@
 ﻿using System.Security.Cryptography.X509Certificates;
 
-namespace Calendar.Contracts;
+namespace Calendar.Contracts.Events;
 
 public record EventResponse(
     Guid Id,

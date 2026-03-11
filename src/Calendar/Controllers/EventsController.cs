@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Calendar_Service.Attributes;
 using Calendar.Contracts;
+using Calendar.Contracts.Events;
 using Calendar_Service.Models;
 using Calendar_Service.Services;
 using FluentValidation;

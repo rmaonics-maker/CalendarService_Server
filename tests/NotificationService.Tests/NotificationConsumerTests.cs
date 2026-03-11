@@ -1,10 +1,9 @@
-﻿using Calendar.Contracts;
+﻿using Calendar.Contracts.Events;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Xunit;
 using FluentAssertions;
 
 namespace NotificationService.Tests;

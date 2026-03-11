@@ -1,4 +1,4 @@
-﻿namespace Calendar.Contracts;
+﻿namespace Calendar.Contracts.Events;
 
 public record EventCreated
 {

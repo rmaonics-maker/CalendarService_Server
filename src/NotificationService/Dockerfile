@@ -2,14 +2,14 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY ["tests/NotificationService/NotificationService.csproj", "tests/NotificationService/"]
+COPY ["src/NotificationService/NotificationService.csproj", "src/NotificationService/"]
 COPY ["src/Contracts/Calendar.Contracts.csproj", "src/Calendar.Contracts/"]
 
-RUN dotnet restore "tests/NotificationService/NotificationService.csproj"
+RUN dotnet restore "src/NotificationService/NotificationService.csproj"
 
 COPY . .
 
-WORKDIR "/src/tests/NotificationService"
+WORKDIR "/src/src/NotificationService"
 RUN dotnet build "NotificationService.csproj" -c Release -o /app/build
 
 FROM build AS publish

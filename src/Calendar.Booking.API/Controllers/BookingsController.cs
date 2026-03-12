@@ -28,4 +28,15 @@ public class BookingsController : ControllerBase
             }
         });
     }
+
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> GetBookings()
+    {
+        var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                  ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                  ?? "Неизвестный ID";
+
+        var bookings = await conte
+    }
 }

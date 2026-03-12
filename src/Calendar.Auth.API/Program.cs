@@ -2,18 +2,26 @@ using OpenIddict.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using MassTransit;
 using Calendar.Auth.API.Data;
+using Calendar.Auth.API.Entities;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-// Register DbContext
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
     .UseSnakeCaseNamingConvention());
+
+builder.Services.AddIdentity<ApplicationUser, Microsoft.AspNetCore.Identity.IdentityRole>()
+        .AddEntityFrameworkStores<AuthDbContext>()
+        .AddDefaultTokenProviders();
     
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Account/Login";
+});
+
 builder.Services.AddOpenIddict()
     .AddCore(options =>
     {
@@ -41,7 +49,6 @@ builder.Services.AddOpenIddict()
 
         options.UseAspNetCore()
             .EnableAuthorizationEndpointPassthrough()
-            //.EnableTokenEndpointPassthrough()
             .DisableTransportSecurityRequirement();
     })
     .AddValidation(options =>
@@ -83,48 +90,48 @@ builder.Services.AddMassTransit(x =>
 });
 
 builder.Services.AddControllers();
-
-builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-// временно отклюбчил для тестов в постмане
-//app.UseHttpsRedirection(); 
 
+app.UseAuthentication(); 
+app.UseAuthorization();  
 app.MapControllers();
-app.UseAuthentication();
-app.UseAuthorization();
 
-// временно для тестирования в постмане
-using (var scope = app.Services.CreateAsyncScope())
+using (var scope = app.Services.CreateScope())
 {
+    // А) Создаем тестового пользователя
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    if (await userManager.FindByEmailAsync("admin@calendar.com") == null)
+    {
+        var user = new ApplicationUser { UserName = "admin@calendar.com", Email = "admin@calendar.com" };
+        await userManager.CreateAsync(user, "Password123!");
+    }
+
+    // Б) Создаем клиента для Postman 
     var manager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
-    if(await manager.FindByClientIdAsync("postman_client") is null)
+    if (await manager.FindByClientIdAsync("postman_client") is null)
     {
         await manager.CreateAsync(new OpenIddictApplicationDescriptor
         {
             ClientId = "postman_client",
-        DisplayName = "Postman Testing Client",
-        RedirectUris = { new Uri("https://oauth.pstmn.io/v1/callback") }, 
-        Permissions =
+            DisplayName = "Postman Testing Client",
+            RedirectUris = { new Uri("https://oauth.pstmn.io/v1/callback") },
+            Permissions =
             {
                 OpenIddictConstants.Permissions.Endpoints.Authorization,
                 OpenIddictConstants.Permissions.Endpoints.Token,
                 OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode,
-                OpenIddictConstants.Permissions.GrantTypes.RefreshToken,
-                OpenIddictConstants.Permissions.Prefixes.Scope + "booking_api",
-                OpenIddictConstants.Permissions.ResponseTypes.Code
+                OpenIddictConstants.Permissions.ResponseTypes.Code, 
+                OpenIddictConstants.Permissions.Prefixes.Scope + "booking_api"
             }
         });
     }
 }
 
 app.Run();
-
-

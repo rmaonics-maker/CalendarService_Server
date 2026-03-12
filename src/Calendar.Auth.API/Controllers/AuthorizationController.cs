@@ -3,28 +3,42 @@ using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using System.Security.Claims;
 using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Identity;
+using Calendar.Auth.API.Entities;
+using Microsoft.AspNetCore.Authentication;
 
 namespace Calendar.Auth.API.Controllers;
 
 [ApiController]
-public class AuthorizationController : ControllerBase
+public class AuthorizationController(UserManager<ApplicationUser> userManager) : ControllerBase
 {
     [HttpGet("~/connect/authorize")]
     [HttpPost("~/connect/authorize")]
     [IgnoreAntiforgeryToken]
-    public IActionResult Authorize()
+    public async Task<IActionResult> Authorize()
     {
+        var request = HttpContext.GetOpenIddictServerRequest() ?? throw new InvalidOperationException("The OpenID Connect request can not be retrieved.");
+
+// 1. проверка авторизации
+        var authenticateResult = await HttpContext.AuthenticateAsync(IdentityConstants.ApplicationScheme);
+
+        if(!authenticateResult.Succeeded)
+        {
+            var returnUrl = Request.PathBase + Request.Path + Request.QueryString;
+            return Redirect($"/Account/Login?returnUrl={Uri.EscapeDataString(returnUrl)}");
+        }
+
+// 2. выдёргивание пользователя из базы
+        var user = await userManager.GetUserAsync(authenticateResult.Principal);
         var identity = new ClaimsIdentity(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
 
-        
-        var subjectClaim = new Claim(OpenIddictConstants.Claims.Subject, "00000000-0000-0000-0000-000000000001");
-        
+// 3. перенос данных в JWT         
+        var subjectClaim = new Claim(OpenIddictConstants.Claims.Subject, user.Id);
         subjectClaim.SetDestinations(OpenIddictConstants.Destinations.AccessToken);
-        
         identity.AddClaim(subjectClaim);
 
         
-        var nameClaim = new Claim(OpenIddictConstants.Claims.Name, "Test User");
+        var nameClaim = new Claim(OpenIddictConstants.Claims.Name, user.Email);
         nameClaim.SetDestinations(OpenIddictConstants.Destinations.AccessToken);
         identity.AddClaim(nameClaim);
 
@@ -34,12 +48,7 @@ public class AuthorizationController : ControllerBase
 
         var principal = new ClaimsPrincipal(identity);
         principal.SetResources("booking_api");
-
-        var request = HttpContext.GetOpenIddictServerRequest();
-        if (request != null)
-        {
-            principal.SetScopes(request.GetScopes());
-        }
+        principal.SetScopes(request.GetScopes());
 
         return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }

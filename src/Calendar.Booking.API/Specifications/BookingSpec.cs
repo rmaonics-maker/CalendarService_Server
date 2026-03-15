@@ -1,8 +1,8 @@
-﻿using Calendar_Service.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using NpgsqlTypes;
+using Calendar.Booking.API.Models;
 
-namespace Calendar_Service.Specifications;
+namespace Calendar.Booking.API.Specifications;
 
 public static class BookingSpec
 {

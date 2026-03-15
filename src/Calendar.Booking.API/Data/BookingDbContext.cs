@@ -1,11 +1,14 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Calendar.Booking.API.Models;
+using Microsoft.EntityFrameworkCore;
+using MassTransit;
 
 namespace Calendar.Booking.API.Data;
 
 public class BookingDbContext(DbContextOptions<BookingDbContext> options) : DbContext(options)
 {
     public DbSet<Models.Booking> Bookings { get; set; }
-
+    public DbSet<Room> Rooms { get; set; }
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -13,5 +16,8 @@ public class BookingDbContext(DbContextOptions<BookingDbContext> options) : DbCo
         modelBuilder.AddInboxStateEntity();
         modelBuilder.AddOutboxMessageEntity();
         modelBuilder.AddOutboxStateEntity();
+        
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(BookingDbContext).Assembly);
+        modelBuilder.HasPostgresExtension("btree_gist");
     }
 }

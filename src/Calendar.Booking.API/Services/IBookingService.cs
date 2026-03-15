@@ -1,11 +1,11 @@
-using Calendar.Booking.API.Models;
+using Calendar.Contracts.DTOs;
 
 namespace Calendar.Booking.API.Services;
 
 public interface IBookingService
 {
-    Task<IEnumerable<Booking>> GetBookingsAsync(Guid userId, CancellationToken token);
-    Task<Booking> CreateBookingAsync(Booking booking, CancellationToken token);
-    Task<bool> DeleteBookingAsync(Guid id, CancellationToken token);
-    Task<bool> UpdateBookingAsync(Guid id, Booking booking, CancellationToken token);
+    Task<IEnumerable<BookingDto>> GetBookingsAsync(Guid userId, CancellationToken token = default);
+    Task<BookingDto> CreateBookingAsync(BookingDto bookingDto, CancellationToken token = default);
+    Task<bool> DeleteBookingAsync(Guid id, CancellationToken token = default);
+    Task<bool> UpdateBookingAsync(Guid id, BookingDto bookingDto, CancellationToken token = default);
 }

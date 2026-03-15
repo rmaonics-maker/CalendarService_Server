@@ -1,42 +1,30 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Calendar.Booking.API.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Calendar.Booking.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class BookingsController : ControllerBase
+public class BookingsController(IBookingService service) : ControllerBase
 {
     [HttpGet]
-    public IActionResult GetTestBookings()
-    {
-        var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
-                  ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                  ?? "Неизвестный ID";
-
-        return Ok(new
-        {
-            Message = "Победа! Токен успешно прошел валидацию.",
-            UserId = userId,
-            Data = new[]
-            {
-                new { Id = 1, Title = "Встреча с Архитектором", Date = DateTime.Now },
-                new { Id = 2, Title = "Деплой в Production", Date = DateTime.Now.AddDays(1) }
-            }
-        });
-    }
-
-    [HttpGet]
     [Authorize]
-    public async Task<IActionResult> GetBookings()
+    public async Task<IActionResult> GetBookings(CancellationToken token = default)
     {
-        var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
-                  ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                  ?? "Неизвестный ID";
+        var userIdString = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                           ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        var bookings = await conte
+        if (!Guid.TryParse(userIdString, out var userId))
+        {
+            return Unauthorized("Некорректный идентификатор пользователя в токене.");
+        }
+
+        var bookings = await service.GetBookingsAsync(userId, token);
+        
+        return Ok(bookings);
     }
 }

@@ -9,9 +9,6 @@ public sealed class User
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public decimal Balance { get; set; }
-    public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
-
-    // Техническое поле для защиты от Race Condition (Double Spending)
     public uint Version { get; set; }
 }
 

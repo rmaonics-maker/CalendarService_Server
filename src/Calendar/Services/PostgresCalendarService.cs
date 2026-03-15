@@ -2,7 +2,6 @@
 using Calendar.Contracts.Events;
 using Calendar_Service.Data;
 using Calendar_Service.Models;
-using Calendar_Service.Specifications;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using NpgsqlTypes;

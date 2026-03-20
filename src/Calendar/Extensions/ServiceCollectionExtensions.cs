@@ -1,5 +1,5 @@
+using Calendar_Service.Options;
 using Calendar_Service.Validators;
-using Calendar.Api.Options;
 using FluentValidation;
 using Microsoft.Extensions.Options;
 

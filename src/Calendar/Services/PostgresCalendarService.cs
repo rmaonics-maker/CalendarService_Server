@@ -2,6 +2,7 @@
 using Calendar.Contracts.Events;
 using Calendar_Service.Data;
 using Calendar_Service.Models;
+using Calendar.Contracts.Responses;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using NpgsqlTypes;
@@ -33,7 +34,9 @@ public class PostgresCalendarService(ApplicationDbContext context, ILogger<Postg
             }
 
             user.Balance -= Price;
-
+            
+            // TODO сделать вызов брони в Booking.API
+/*
             // 3. создание брони
             var booking = new Booking
             {
@@ -52,10 +55,10 @@ public class PostgresCalendarService(ApplicationDbContext context, ILogger<Postg
             };
 
             context.Bookings.Add(booking);
-            
+            */
             await publishEndpoint.Publish(new EventCreated
             {
-                EventId = booking.Id,
+                //EventId = booking.Id,
                 Title = evt.Title,
                 UserId = evt.UserId,
                 UserEmail = user.Email,
@@ -181,7 +184,7 @@ public class PostgresCalendarService(ApplicationDbContext context, ILogger<Postg
             Name = user.Name,
             Balance = user.Balance,
             
-            Events = [.. user.Bookings.Select(b =>
+            Appointments = [.. user.Bookings.Select(b =>
             {
                 // 1. Восстанавливаем UTC Kind (Npgsql возвращает Unspecified)
                 var startUtc = DateTime.SpecifyKind(b.Period.LowerBound, DateTimeKind.Utc);

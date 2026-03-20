@@ -27,7 +27,7 @@ public class NotificationConsumerTests
 
         var message = new EventCreated
         {
-            EventId = Guid.NewGuid(),
+            AppointmentId = Guid.NewGuid(),
             Title = "Unit Test Event",
             UserId = Guid.NewGuid(),
             UserEmail = "test@unit.com",

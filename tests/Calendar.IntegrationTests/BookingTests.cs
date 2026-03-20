@@ -70,7 +70,7 @@ namespace Calendar.IntegrationTests
             
             eventCreatedMessage.Context.Message.Title.Should().Be(createEventRequest.Title, "Заголовок в сообщении должен соответствовать запросу");
             eventCreatedMessage.Context.Message.UserId.Should().Be(user.Id, "UserId в сообщении должен соответствовать созданному пользователю");
-            eventCreatedMessage.Context.Message.EventId.Should().NotBeEmpty("EventId должен быть заполнен");
+            eventCreatedMessage.Context.Message.AppointmentId.Should().NotBeEmpty("EventId должен быть заполнен");
             eventCreatedMessage.Context.Message.OccurredAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(10),
                 "OccuredAt должен быть близок к текущему времени");
         }

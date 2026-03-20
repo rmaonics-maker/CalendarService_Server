@@ -1,4 +1,4 @@
-namespace Calendar.Api.Options;
+namespace Calendar_Service.Options;
 
 public class RabbitMqOptions
 {

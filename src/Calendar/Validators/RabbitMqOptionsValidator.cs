@@ -1,4 +1,4 @@
-using Calendar.Api.Options;
+using Calendar_Service.Options;
 using FluentValidation;
 
 namespace Calendar_Service.Validators;

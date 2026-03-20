@@ -1,6 +1,6 @@
 ﻿using AutoFixture;
+using Calendar_Service.Options;
 using Calendar_Service.Validators;
-using Calendar.Api.Options;
 using FluentAssertions;
 using FluentValidation.TestHelper;
 

@@ -2,6 +2,8 @@
 using Calendar.Contracts;
 using Calendar_Service.Models;
 using Calendar_Service.Services;
+using Calendar.Contracts.Requests;
+using Calendar.Contracts.Responses;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 

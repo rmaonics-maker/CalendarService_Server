@@ -29,6 +29,10 @@ public class Program
             x.AddConsumer<NotificationConsumer>();
             x.AddConsumer<UserRegisteredConsumer>();
 
+            x.AddConsumer<BookingCreatedConsumer>();
+            x.AddConsumer<BookingUpdatedConsumer>();
+            x.AddConsumer<BookingDeletedConsumer>();
+
             x.AddEntityFrameworkOutbox<NotificationDbContext>(o =>
             {
                 o.UsePostgres();

@@ -15,7 +15,7 @@ public class NotificationConsumer(ILogger<NotificationConsumer> logger) : IConsu
                 "[EMAIL SENT] To: {Email}. Subject: '{Title}'. Event ID: {Id}. Attempt: {Attempt}",
                 message.UserEmail,
                 message.Title,
-                message.EventId,
+                message.AppointmentId,
                 context.GetRetryAttempt()
             );
 

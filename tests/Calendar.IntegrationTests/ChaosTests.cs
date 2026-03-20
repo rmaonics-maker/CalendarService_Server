@@ -15,7 +15,7 @@ public class ChaosTests(CalendarApiFactory factory) : BaseIntegrationTest(factor
 
         await Harness.Bus.Publish(new EventCreated
         {
-            EventId = eventId,
+            AppointmentId = eventId,
             Title = "Test event",
             UserEmail = userEmail,
             UserId = Guid.NewGuid(),
@@ -29,7 +29,7 @@ public class ChaosTests(CalendarApiFactory factory) : BaseIntegrationTest(factor
         await Task.Delay(TimeSpan.FromSeconds(5));
         
         // Проверяем, что сообщение было потреблено NotificationConsumer
-        var consumed = await consumerHarness.Consumed.Any<EventCreated>(x => x.Context.Message.EventId == eventId);
+        var consumed = await consumerHarness.Consumed.Any<EventCreated>(x => x.Context.Message.AppointmentId == eventId);
         Assert.True(consumed, "Сообщение не было потреблено NotificationConsumer после повторных попыток");
     }
     
@@ -41,7 +41,7 @@ public class ChaosTests(CalendarApiFactory factory) : BaseIntegrationTest(factor
 
         await Harness.Bus.Publish(new EventCreated
         {
-            EventId = eventId,
+            AppointmentId = eventId,
             Title = "Test event",
             UserEmail = userEmail,
             UserId = Guid.NewGuid(),
@@ -54,7 +54,7 @@ public class ChaosTests(CalendarApiFactory factory) : BaseIntegrationTest(factor
         await Task.Delay(TimeSpan.FromSeconds(2));
         
         // Проверяем, что сообщение было потреблено NotificationConsumer (даже с ошибкой)
-        var consumed = await consumerHarness.Consumed.Any<EventCreated>(x => x.Context.Message.EventId == eventId);
+        var consumed = await consumerHarness.Consumed.Any<EventCreated>(x => x.Context.Message.AppointmentId == eventId);
         Assert.True(consumed, "Сообщение не было потреблено NotificationConsumer");
     }
     
@@ -66,7 +66,7 @@ public class ChaosTests(CalendarApiFactory factory) : BaseIntegrationTest(factor
 
         await Harness.Bus.Publish(new EventCreated
         {
-            EventId = eventId,
+            AppointmentId = eventId,
             Title = "Test event",
             UserEmail = userEmail,
             UserId = Guid.NewGuid(),
@@ -79,7 +79,7 @@ public class ChaosTests(CalendarApiFactory factory) : BaseIntegrationTest(factor
         await Task.Delay(TimeSpan.FromSeconds(2));
         
         // Проверяем, что сообщение было потреблено NotificationConsumer
-        var consumed = await consumerHarness.Consumed.Any<EventCreated>(x => x.Context.Message.EventId == eventId);
+        var consumed = await consumerHarness.Consumed.Any<EventCreated>(x => x.Context.Message.AppointmentId == eventId);
         Assert.True(consumed, "Сообщение не было потреблено NotificationConsumer");
     }
 }

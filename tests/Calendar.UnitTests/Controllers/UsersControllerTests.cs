@@ -4,6 +4,8 @@ using Calendar_Service.Controllers;
 using Calendar_Service.Models;
 using Calendar_Service.Services;
 using Calendar.Contracts;
+using Calendar.Contracts.Requests;
+using Calendar.Contracts.Responses;
 using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;

@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Calendar.Contracts.Requests;
+using Calendar.Contracts.Responses;
 
 namespace Calendar_Service.Mapping
 {
@@ -6,9 +8,9 @@ namespace Calendar_Service.Mapping
     {
         public UserMappingProfile()
         {
-            CreateMap<Calendar.Contracts.CreateUserRequest, Models.User>()
+            CreateMap<CreateUserRequest, Models.User>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore());
-            CreateMap<Models.User, Calendar.Contracts.UserResponse>();
+            CreateMap<Models.User, UserResponse>();
         }
     }
 }

@@ -6,7 +6,7 @@ namespace Calendar.Booking.API.Specifications;
 
 public static class BookingSpec
 {
-    public static IQueryable<Booking> InPeriod(this IQueryable<Booking> query, DateTimeOffset start, DateTimeOffset end)
+    public static IQueryable<BookingModel> InPeriod(this IQueryable<BookingModel> query, DateTimeOffset start, DateTimeOffset end)
     {
         var startUtc = DateTime.SpecifyKind(start.UtcDateTime, DateTimeKind.Unspecified);
         var endUtc = DateTime.SpecifyKind(end.UtcDateTime, DateTimeKind.Unspecified);
@@ -16,7 +16,7 @@ public static class BookingSpec
         return query.Where(b => b.Period.Overlaps(range));
     }
 
-    public static IQueryable<Booking> ForRoom(this IQueryable<Booking> query, int roomId)
+    public static IQueryable<BookingModel> ForRoom(this IQueryable<BookingModel> query, int roomId)
     {
         return query.Where(b => b.RoomId == roomId);
     }

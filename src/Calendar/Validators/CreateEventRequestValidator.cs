@@ -1,4 +1,5 @@
 ﻿using Calendar.Contracts;
+using Calendar.Contracts.Events;
 using FluentValidation;
 
 namespace Calendar_Service.Validators;

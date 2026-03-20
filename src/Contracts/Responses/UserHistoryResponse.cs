@@ -1,13 +1,13 @@
-﻿using Calendar.Contracts.DTOs;
+﻿using Calendar.Contracts.Dtos;
 
-namespace Calendar.Contracts;
-
-public sealed class UserHistoryResponse
-{
-    public Guid UserId { get; set; }
-    public required string Name { get; set; }
-    public decimal Balance { get; set; }
-    public List<HistoryEventDto> Events { get; set; } = new();
-    
-    
-}
+namespace Calendar.Contracts.Responses;
+/// <summary>
+/// Ответ с историей пользователя (личные события + бронирования)
+/// Используется в: Calendar API
+/// </summary>
+public sealed record UserHistoryResponse(
+    Guid UserId,
+    string Name,
+    decimal Balance,
+    List<HistoryItemDto> Appointments  // Объединённый список
+);

@@ -6,8 +6,8 @@ namespace Calendar.Booking.API.Data;
 
 public class BookingDbContext(DbContextOptions<BookingDbContext> options) : DbContext(options)
 {
-    public DbSet<Models.Booking> Bookings { get; set; }
-    public DbSet<Room> Rooms { get; set; }
+    public DbSet<Models.BookingModel> Bookings { get; set; }
+    public DbSet<RoomModel> Rooms { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

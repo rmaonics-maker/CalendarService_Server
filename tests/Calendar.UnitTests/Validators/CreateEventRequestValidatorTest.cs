@@ -1,6 +1,7 @@
 ﻿using AutoFixture;
 using Calendar_Service.Validators;
 using Calendar.Contracts;
+using Calendar.Contracts.Events;
 using FluentValidation.TestHelper;
 
 namespace Calendar.UnitTests.Validators;

@@ -1,5 +1,5 @@
-using Calendar.Api.Options;
 using Calendar_Service.Data;
+using Calendar_Service.Options;
 using Calendar_Service.Services;
 using FluentValidation;
 using MassTransit;
@@ -83,7 +83,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(option => option
             .UseNpgsql(connectionString)
             .UseSnakeCaseNamingConvention());
 
-builder.Services.AddScoped<ICalendarService, PostgresCalendarService>();
+builder.Services.AddScoped<IUserService, PostgresUserService>();
 
 var secretPath = "/run/secrets";
 if(Directory.Exists(secretPath))

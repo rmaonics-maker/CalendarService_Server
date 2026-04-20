@@ -5,5 +5,6 @@
 /// После успешной регистрации публикуется UserRegisteredEvent
 /// </summary>
 public record RegisterRequest(
+    string Username,
     string Email,
     string Password);

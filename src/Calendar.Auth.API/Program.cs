@@ -1,4 +1,3 @@
-using OpenIddict.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using MassTransit;
 using Calendar.Auth.API.Data;
@@ -13,7 +12,7 @@ builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
     .UseSnakeCaseNamingConvention());
 
-builder.Services.AddIdentity<ApplicationUser, Microsoft.AspNetCore.Identity.IdentityRole>()
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
         .AddEntityFrameworkStores<AuthDbContext>()
         .AddDefaultTokenProviders();
     
@@ -102,7 +101,7 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication(); 
 app.UseAuthorization();  
 app.MapControllers();
-
+/*
 using (var scope = app.Services.CreateScope())
 {
     // А) Создаем тестового пользователя
@@ -133,5 +132,5 @@ using (var scope = app.Services.CreateScope())
         });
     }
 }
-
+*/
 app.Run();

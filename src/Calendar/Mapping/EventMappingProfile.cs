@@ -1,25 +1,20 @@
 ﻿using AutoMapper;
-using Calendar.Contracts;
-using Calendar.Contracts.Events;
+using Calendar.Contracts.Requests;
 using Calendar_Service.Models;
+using Calendar.Contracts.Dtos;
+using Calendar.Contracts.Responses;
 
 namespace Calendar_Service.Mapping;
 
-public class EventMappingProfile : Profile
+public class AppointmentMappingProfile : Profile
 {
-    public EventMappingProfile()
+    public AppointmentMappingProfile()
     {
-        CreateMap<CreateEventRequest, CalendarEvent>()
-            .ForMember(dest => dest.Id, opt => opt.Ignore())
-            .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))
-            .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
-            .ForMember(dest => dest.StartTime, opt => opt.MapFrom(src => src.StartTime))
-            .ForMember(dest => dest.Duration, opt => opt.MapFrom(src => src.Duration))
-            .ForMember(dest => dest.Location, opt => opt.MapFrom(src => src.Location))
-            .ForMember(dest => dest.RecurrentRule, opt => opt.MapFrom(src => src.RecurrentRule))
-            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId));
+        CreateMap<CreateAppointmentRequest, AppointmentDto>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore());
 
-        CreateMap<CalendarEvent, EventResponse>()
-            .ForMember(dest => dest.EndTime, opt => opt.MapFrom(src => src.StartTime + src.Duration));
+        CreateMap<AppointmentDto, Appointment>().ReverseMap();
+
+        CreateMap<AppointmentDto, AppointmentResponse>();
     }
 }

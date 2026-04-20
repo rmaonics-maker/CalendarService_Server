@@ -1,6 +1,7 @@
 ﻿namespace Calendar.Contracts.Types;
 /// <summary>
 /// Обёртка для email (Value Object)
+/// Используется в Auth API
 /// </summary>
 public sealed record Email(string Value)
 {

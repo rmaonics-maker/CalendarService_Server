@@ -2,7 +2,6 @@
 using Calendar_Service.Models;
 using Calendar.Contracts.Responses;
 using MassTransit;
-using CalendarEvent = Calendar_Service.Models.CalendarEvent;
 
 namespace Calendar_Service.Services;
 

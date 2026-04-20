@@ -1,6 +1,7 @@
 ﻿namespace Calendar.Contracts.Types;
 /// <summary>
 /// Обёртка для decimal (денег)
+/// Используется в Auth API и Booking API
 /// </summary>
 public sealed record Money(
     decimal Amount,

@@ -19,7 +19,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.ToTable("users");
         builder.HasKey(u => u.Id);
 
-        builder.Property(x => x.Name).IsRequired();
+        builder.Property(x => x.Name).IsRequired().HasMaxLength(200);
 
         builder.Property(x => x.Email)
             .IsRequired()

@@ -9,6 +9,6 @@ public sealed record AppointmentCreatedEvent(
     Guid AppointmentId,
     string Title,
     Guid UserId,
-    string UserEmail,
+    string? UserEmail,
     DateTime OccurredAt);
 

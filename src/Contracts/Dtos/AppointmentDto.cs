@@ -12,4 +12,4 @@ public sealed record AppointmentDto(
     string Location,
     string? RecurrentRule,
     Guid UserId,
-    DateTime CreatedAt);
+    DateTime? CreatedAt);

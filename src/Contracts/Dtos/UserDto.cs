@@ -1,11 +1,10 @@
 ﻿namespace Calendar.Contracts.Dtos;
 /// <summary>
-/// DTO для пользователя
+/// Упрощённый DTO для пользователя
+/// Используется в других сервисах для минимальной информации
 /// </summary>
 public sealed record UserDto(
     Guid Id,
     string Name,
-    string Email,
-    decimal Balance,
-    DateTime CreatedAt
+    string Email
 );

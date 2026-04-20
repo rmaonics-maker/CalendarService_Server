@@ -10,11 +10,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace Calendar_Service.Controllers
 {
     [ApiController]
-    [Route(("api/v1/users"))]
     public class UsersController(ICalendarService service, IMapper mapper, IValidator<CreateUserRequest> validator) : ControllerBase
     {
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateUserRequest request, CancellationToken token)
+        public async Task<IActionResult> CreateUser(CreateUserRequest request, CancellationToken token)
         {
             var validationResult = await validator.ValidateAsync(request, token);
 

@@ -1,12 +1,11 @@
-﻿using Calendar.Contracts;
-using Calendar.Contracts.Events;
+﻿using Calendar.Contracts.Requests;
 using FluentValidation;
 
 namespace Calendar_Service.Validators;
 
-public class CreateEventRequestValidator : AbstractValidator<CreateEventRequest>
+public class UpdateAppointmentRequestValidator : AbstractValidator<UpdateAppointmentRequest>
 {
-    public CreateEventRequestValidator()
+    public UpdateAppointmentRequestValidator()
     {
         RuleFor(x => x.Title)
             .NotEmpty().WithMessage("Title is required.")
@@ -18,12 +17,5 @@ public class CreateEventRequestValidator : AbstractValidator<CreateEventRequest>
         RuleFor(x => x.Duration)
             .NotEmpty().WithMessage("Duration is required.")
             .GreaterThan(TimeSpan.Zero).WithMessage("Duration must be positive.");
-        
-        RuleFor(x => x.StartTime)
-            .NotEmpty().WithMessage("Start time is required.")
-            .GreaterThan(DateTimeOffset.UtcNow).WithMessage("Start time must be in the future.");
-
-        RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("UserId is required and cannot be empty.");
     }
 }

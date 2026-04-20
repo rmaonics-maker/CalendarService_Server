@@ -7,7 +7,7 @@ namespace Calendar_Service.Data;
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {
     public DbSet<User> Users { get; set; }
-    public DbSet<CalendarEvent> Events { get; set; }
+    public DbSet<Appointment> Appointments { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

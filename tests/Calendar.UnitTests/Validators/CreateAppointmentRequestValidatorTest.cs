@@ -6,9 +6,9 @@ using FluentValidation.TestHelper;
 
 namespace Calendar.UnitTests.Validators;
 
-public class CreateEventRequestValidatorTest
+public class CreateAppointmentRequestValidatorTest
 {
-    private readonly CreateEventRequestValidator _validator = new();
+    private readonly CreateAppointmentRequestValidator _validator = new();
     private readonly IFixture _fixture = new Fixture();
 
 #region Title 

@@ -49,18 +49,18 @@ public class EventsControllerTests
         var request = _fixture.Create<CreateEventRequest>();
         var createdEventId = Guid.NewGuid();
         var userEmail = _fixture.Create<string>();
-        var entity = _fixture.Create<CalendarEvent>();
-        _mapper.Map<CalendarEvent>(request).Returns(entity);
+        var entity = _fixture.Create<Appointment>();
+        _mapper.Map<Appointment>(request).Returns(entity);
 
         _testOutputHelper.WriteLine($"[DIAGNOSTIC] Test entity: {entity.Id}, Title: {entity.Title}");
         
-        _service.CreateEventAsync(Arg.Any<CalendarEvent>(), _endPoint, Arg.Any<CancellationToken>())
+        _service.CreateEventAsync(Arg.Any<Appointment>(), _endPoint, Arg.Any<CancellationToken>())
             .Returns((createdEventId, userEmail));
 
         var eventResponse = new EventResponse(createdEventId, entity.Title, entity.Location, entity.StartTime,
             entity.StartTime.Add(entity.Duration));
         
-        _mapper.Map<EventResponse>(Arg.Is<CalendarEvent>(e => e == entity)).Returns(eventResponse);
+        _mapper.Map<EventResponse>(Arg.Is<Appointment>(e => e == entity)).Returns(eventResponse);
         _testOutputHelper.WriteLine($"[DIAGNOSTIC] Mock setup: Map<EventResponse>(entity with Id={entity.Id}) returns EventResponse");
         
         // Act
@@ -112,15 +112,15 @@ public class EventsControllerTests
     {
         // Arrange
         var request = _fixture.Create<CreateEventRequest>();
-        var entity = _fixture.Create<CalendarEvent>();
-        _mapper.Map<CalendarEvent>(request).Returns(entity);
+        var entity = _fixture.Create<Appointment>();
+        _mapper.Map<Appointment>(request).Returns(entity);
 
         var innerException =
             new Exception("23514: conflicting key value violates exclusion constraint \"no_overlapping_bookings\"");
 
         var dbUpdateException = new DbUpdateException("Database update failed", innerException);
 
-        _service.CreateEventAsync(Arg.Any<CalendarEvent>(), _endPoint, Arg.Any<CancellationToken>())
+        _service.CreateEventAsync(Arg.Any<Appointment>(), _endPoint, Arg.Any<CancellationToken>())
             .Throws(dbUpdateException);
         // Act
         var result = await _sut.Create(request, CancellationToken.None);
@@ -140,13 +140,13 @@ public class EventsControllerTests
     {
         // Arrange
         var request = _fixture.Create<CreateEventRequest>();
-        var entity = _fixture.Create<CalendarEvent>();
-        _mapper.Map<CalendarEvent>(request).Returns(entity);
+        var entity = _fixture.Create<Appointment>();
+        _mapper.Map<Appointment>(request).Returns(entity);
 
         var invalidOperationException =
             new InvalidOperationException("Not enough money. User 'abc' has 5.0, but 10.0 is required.");
 
-        _service.CreateEventAsync(Arg.Any<CalendarEvent>(), _endPoint, Arg.Any<CancellationToken>())
+        _service.CreateEventAsync(Arg.Any<Appointment>(), _endPoint, Arg.Any<CancellationToken>())
             .Throws(invalidOperationException);
         
         // Act
@@ -185,7 +185,7 @@ public class EventsControllerTests
     public async Task Get_Should_ReturnsOk_When_GetEvent()
     {
         // Act
-        var evt = _fixture.Create<CalendarEvent>();
+        var evt = _fixture.Create<Appointment>();
         _service.GetEvent(Arg.Is<Guid>(id => id == evt.Id)).Returns(evt);
         
         // Arrange
@@ -194,8 +194,8 @@ public class EventsControllerTests
         // Assert
         result.Should().BeOfType<OkObjectResult>();
         var okResult = (OkObjectResult)result;
-        okResult.Value.Should().BeOfType<CalendarEvent>();
-        var eventResult = (CalendarEvent)okResult.Value;
+        okResult.Value.Should().BeOfType<Appointment>();
+        var eventResult = (Appointment)okResult.Value;
         eventResult.Id.Should().Be(evt.Id);
     }
 #endregion
@@ -224,7 +224,7 @@ public class EventsControllerTests
         // Arrange
         var to = DateTimeOffset.UtcNow;
         var from = to.AddDays(-1);
-        IEnumerable<CalendarEvent> events = [_fixture.Create<CalendarEvent>(), _fixture.Create<CalendarEvent>()];
+        IEnumerable<Appointment> events = [_fixture.Create<Appointment>(), _fixture.Create<Appointment>()];
         _service.GetOccurrences(from, to).Returns(events);
         
         // Act

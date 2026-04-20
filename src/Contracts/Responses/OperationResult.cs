@@ -1,6 +1,7 @@
 ﻿namespace Calendar.Contracts.Responses;
 /// <summary>
 /// Результат операции
+/// Используется во всех HTTP API
 /// </summary>
 public sealed record OperationResult(
     bool IsSuccess,

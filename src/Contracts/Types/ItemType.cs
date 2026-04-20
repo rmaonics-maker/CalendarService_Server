@@ -1,7 +1,9 @@
 ﻿namespace Calendar.Contracts.Types;
-
+/// <summary>
+/// Тип элемента истории
+/// </summary>
 public enum ItemType
 {
-    Personal,
-    Booking
+    Appointment = 1,
+    Booking = 2
 }

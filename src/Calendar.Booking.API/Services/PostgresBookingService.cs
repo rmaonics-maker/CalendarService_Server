@@ -1,3 +1,5 @@
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Calendar.Booking.API.Data;
 using Calendar.Booking.API.Models;
 using Calendar.Contracts.Dtos;
@@ -11,59 +13,50 @@ namespace Calendar.Booking.API.Services;
 public class PostgresBookingService(
     BookingDbContext context,
     IPublishEndpoint publishEndpoint,
-    ILogger<PostgresBookingService> logger) : IBookingService
+    ILogger<PostgresBookingService> logger,
+    IMapper mapper) : IBookingService
 {
     public async Task<IEnumerable<BookingDto>> GetBookingsAsync(Guid userId, CancellationToken token = default)
     {
         var bookings = await context.Bookings
             .Where(b => b.UserId == userId)
             .OrderBy(b => b.Period.LowerBound)
+            .ProjectTo<BookingDto>(mapper.ConfigurationProvider)
             .ToListAsync(token);
 
-        return bookings.Select(MapToDto);
+        return mapper.Map<IEnumerable<BookingDto>>(bookings);
     }
 
-    public async Task<BookingDto?> GetBookingAsync(Guid id, CancellationToken token = default)
+    public async Task<(Guid?, BookingDto?)> GetBookingAsync(Guid id, CancellationToken token = default)
     {
         var booking = await context.Bookings
             .FirstOrDefaultAsync(b => b.Id == id, token);
 
-        return booking is not null ? MapToDto(booking) : null;
+        if (booking is null) return (null, null);
+        return (booking.UserId, mapper.Map<BookingDto>(booking));
     }
 
-    public async Task<BookingDto> CreateBookingAsync(BookingDto bookingDto, CancellationToken token = default)
+    public async Task<BookingDto> CreateBookingAsync(Guid userId, BookingDto bookingDto, CancellationToken token = default)
     {
         await using var transaction = await context.Database.BeginTransactionAsync(token);
 
         try
         {
-            var booking = new BookingModel
-            {
-                Id = Guid.NewGuid(),
-                Title = bookingDto.Title,
-                UserId = bookingDto.UserId,
-                RoomId = bookingDto.RoomId,
-                Period = new NpgsqlRange<DateTime>(
-                    EnsureUtcUnspecified(bookingDto.StartTimeUtc),
-                    EnsureUtcUnspecified(bookingDto.EndTimeUtc)
-                ),
-                CreatedAtUtc = DateTime.UtcNow,
-                Version = 0
-            };
-
-            context.Bookings.Add(booking);
+            var bookingModel = mapper.Map<BookingModel>(bookingDto);
+            bookingModel.UserId = userId;
+            context.Bookings.Add(bookingModel);
             await context.SaveChangesAsync(token);
 
             // Публикация события через Outbox
             await publishEndpoint.Publish(new BookingCreatedEvent
             (
-                BookingId: booking.Id,
-                Title: booking.Title,
-                UserId: booking.UserId,
-                RoomId: booking.RoomId,
-                StartTimeUtc: booking.Period.LowerBound,
-                EndTimeUtc: booking.Period.UpperBound,
-                AppointmentId: Guid.Empty, // TODO добавить потом
+                BookingId: bookingModel.Id,
+                Title: bookingModel.Title,
+                UserId: bookingModel.UserId,
+                RoomId: bookingModel.RoomId,
+                StartTimeUtc: bookingModel.Period.LowerBound,
+                EndTimeUtc: bookingModel.Period.UpperBound,
+                AppointmentId: bookingModel.AppointmentId,
                 OccurredAt: DateTime.UtcNow
             ), token);
 
@@ -71,9 +64,10 @@ public class PostgresBookingService(
 
             logger.LogInformation(
                 "Создано бронирование: ID={BookingId}, Title='{Title}', UserId={UserId}, RoomId={RoomId}",
-                booking.Id, booking.Title, booking.UserId, booking.RoomId);
-
-            return MapToDto(booking);
+                bookingModel.Id, bookingModel.Title, bookingModel.UserId, bookingModel.RoomId);
+            
+            // смапить модель в дто
+            return mapper.Map<BookingDto>(bookingModel);
         }
         catch (Exception ex)
         {
@@ -83,7 +77,7 @@ public class PostgresBookingService(
         }
     }
 
-    public async Task<bool> UpdateBookingAsync(Guid id, BookingDto bookingDto, CancellationToken token = default)
+    public async Task<BookingDto?> UpdateBookingAsync(Guid id, BookingDto bookingDto, CancellationToken token = default)
     {
         await using var transaction = await context.Database.BeginTransactionAsync(token);
 
@@ -93,11 +87,11 @@ public class PostgresBookingService(
                 .FirstOrDefaultAsync(b => b.Id == id, token);
 
             if (booking is null)
-                return false;
+                return null;
 
             var oldTitle = booking.Title;
             var oldRoomId = booking.RoomId;
-            //var oldPeriod = booking.Period;
+            var oldPeriod = booking.Period;
 
             booking.Title = bookingDto.Title;
             booking.RoomId = bookingDto.RoomId;
@@ -122,10 +116,11 @@ public class PostgresBookingService(
             await transaction.CommitAsync(token);
 
             logger.LogInformation(
-                "Обновлено бронирование: ID={BookingId}, Title='{OldTitle}' -> '{NewTitle}', RoomId={OldRoomId} -> {NewRoomId}",
-                booking.Id, oldTitle, booking.Title, oldRoomId, booking.RoomId);
+                "Обновлено бронирование: ID={BookingId}, Title='{OldTitle}' -> '{NewTitle}', " +
+                "RoomId={OldRoomId} -> {NewRoomId}, Period={OldPeriod} -> {NewPeriod}",
+                booking.Id, oldTitle, booking.Title, oldRoomId, booking.RoomId, oldPeriod, booking.Period);
 
-            return true;
+            return mapper.Map<BookingDto>(booking);
         }
         catch (Exception ex)
         {
@@ -156,7 +151,8 @@ public class PostgresBookingService(
             (
                 BookingId: id,
                 UserId: userId,
-                AppointmentId: Guid.Empty,  // TODO добавить потом
+                AppointmentId: booking.AppointmentId,
+                RefundAmount: 10m, // TODO: добавить стоимость
                 OccurredAt: DateTime.UtcNow
             ), token);
 
@@ -172,21 +168,6 @@ public class PostgresBookingService(
             logger.LogError(ex, "Ошибка при удалении бронирования {BookingId}", id);
             throw;
         }
-    }
-
-    private static BookingDto MapToDto(BookingModel booking)
-    {
-        return new BookingDto
-        (
-            Id: booking.Id,
-            Title: booking.Title,
-            UserId: booking.UserId,
-            RoomId: booking.RoomId,
-            StartTimeUtc: booking.Period.LowerBound,
-            EndTimeUtc: booking.Period.UpperBound,
-            CreatedAtUtc: booking.CreatedAtUtc,
-            AppointmentId: Guid.Empty   // TODO добавить потом
-        );
     }
 
     private static DateTime EnsureUtcUnspecified(DateTime dateTime)

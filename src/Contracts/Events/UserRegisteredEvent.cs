@@ -5,7 +5,8 @@ namespace Calendar.Contracts.Events;
 /// Потребляется: Users API (calendar_service) (для создания профиля), NotificationService
 /// </summary>
 public sealed record UserRegisteredEvent(
-    Guid UserId,
+    Guid Id,
+    string Name,
     string Email,
     DateTime OccurredAt
 );

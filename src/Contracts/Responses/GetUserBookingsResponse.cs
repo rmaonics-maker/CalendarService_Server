@@ -1,6 +1,6 @@
 ﻿using Calendar.Contracts.Dtos;
 
-namespace Calendar.Contracts.Messages;
+namespace Calendar.Contracts.Responses;
 /// <summary>
 /// Ответ на запрос бронирований пользователя
 /// </summary>

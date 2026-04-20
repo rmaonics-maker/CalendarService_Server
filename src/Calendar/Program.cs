@@ -1,3 +1,4 @@
+using Calendar_Service.Consumers;
 using Calendar_Service.Data;
 using Calendar_Service.Options;
 using Calendar_Service.Services;
@@ -9,6 +10,8 @@ using Microsoft.OpenApi;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +54,8 @@ builder.Services.AddMassTransit(x =>
 
         cfg.ConfigureEndpoints(context);
     });
+
+    x.AddConsumer<UserRegisteredConsumer>();
 });
 
 builder.Services.AddSwaggerGen(c => 
@@ -67,7 +72,7 @@ builder.Services.AddOpenTelemetry()
     {
         providerBuilder
             .SetResourceBuilder(ResourceBuilder.CreateDefault()
-                .AddService("Calendar.Api"))
+            .AddService("Calendar.Api"))
             .AddSource("MassTransit")
             .AddAspNetCoreInstrumentation()
             .AddHttpClientInstrumentation()
@@ -94,6 +99,23 @@ if(Directory.Exists(secretPath))
 builder.Services.AddOptions<RabbitMqOptions>()
     .Bind(builder.Configuration.GetSection(RabbitMqOptions.SectionName))
     .ValidateOnStart();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = builder.Configuration["Authentication:Authority"] ?? "http://localhost:8081/"; 
+        options.Audience = builder.Configuration["Authentication:Audience"] ?? "auth_api";
+        options.RequireHttpsMetadata = false; // TODO: change to true in production
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true
+        };
+    });
+
+builder.Services.AddAuthorization();
     
 var app = builder.Build();
 

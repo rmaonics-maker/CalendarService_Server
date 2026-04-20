@@ -6,13 +6,14 @@ namespace Calendar.Booking.API.Models;
 
 public sealed class BookingModel
 {
-    public Guid Id { get; set; }
-    public string Title { get; set; } = string.Empty;
+    public Guid Id { get; init; }
+    public string? Title { get; set; }
     public Guid UserId { get; set; }
+    public Guid? AppointmentId { get; init; }
     public int RoomId { get; set; }
-    public NpgsqlRange<DateTime> Period { get; set; } = default!;
-    public DateTime CreatedAtUtc { get; set; }
-    public uint Version { get; set; }
+    public NpgsqlRange<DateTime> Period { get; set; }
+    public DateTime CreatedAtUtc { get; init; }
+    public uint Version { get; init; }
 }
 
 public sealed class BookingConfiguration : IEntityTypeConfiguration<BookingModel>

@@ -1,12 +1,18 @@
-﻿using Calendar_Service.Data;
+﻿using AutoMapper;
+using Calendar_Service.Data;
 using Calendar_Service.Models;
 using Calendar.Contracts;
 using Calendar.Contracts.Responses;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
 namespace Calendar_Service.Services;
 
-public class PostgresUserService(ApplicationDbContext context, ILogger<PostgresUserService> logger) :
+public class PostgresUserService(
+    ApplicationDbContext context, 
+    ILogger<PostgresUserService> logger,
+    IMapper mapper,
+    IPublishEndpoint publishEndpoint) :
     IUserService
 {
     public async Task<Guid> CreateUserAsync(User user, CancellationToken token = default)

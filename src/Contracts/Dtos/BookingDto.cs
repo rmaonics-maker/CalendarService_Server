@@ -9,6 +9,7 @@ public sealed record BookingDto(
     Guid Id,
     string Title,
     int RoomId,
+    //Guid UserId,
     DateTime StartTimeUtc,
     DateTime EndTimeUtc,
     DateTime CreatedAtUtc,

@@ -15,9 +15,9 @@ public class UserRegisteredConsumer : IConsumer<UserRegisteredEvent>
     public async Task Consume(ConsumeContext<UserRegisteredEvent> context)
     {
         var msg = context.Message;
-        _logger.LogInformation("Получено событие регистрации для пользователя: {UserId}", msg.UserId);
+        _logger.LogInformation("Получено событие регистрации для пользователя: {UserId}", msg.Id);
         var alreadySent = await _dbContext.EmailLogs
-        .AnyAsync(l => l.UserId == msg.UserId && l.EmailType == "Welcome");
+        .AnyAsync(l => l.UserId == msg.Id && l.EmailType == "Welcome");
 
         if(alreadySent) return;
 
@@ -25,7 +25,7 @@ public class UserRegisteredConsumer : IConsumer<UserRegisteredEvent>
 
         _dbContext.EmailLogs.Add(new EmailLog
         {
-            UserId = msg.UserId, 
+            UserId = msg.Id, 
             EmailType = "Welcome", 
             SentAt = DateTimeOffset.UtcNow 
         });

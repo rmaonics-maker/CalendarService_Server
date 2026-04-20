@@ -6,7 +6,7 @@ namespace Calendar.Contracts.Events;
 /// </summary>
 public sealed record BookingCreatedEvent(
     Guid BookingId,
-    string Title,
+    string? Title,
     Guid UserId,
     int RoomId,
     DateTime StartTimeUtc,

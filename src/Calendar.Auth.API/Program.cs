@@ -101,36 +101,54 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication(); 
 app.UseAuthorization();  
 app.MapControllers();
-/*
+
 using (var scope = app.Services.CreateScope())
 {
-    // А) Создаем тестового пользователя
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-    if (await userManager.FindByEmailAsync("admin@calendar.com") == null)
+    var services = scope.ServiceProvider;
+    
+    // А) Создаем роли
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+    if (!await roleManager.RoleExistsAsync("Admin"))
     {
-        var user = new ApplicationUser { UserName = "admin@calendar.com", Email = "admin@calendar.com" };
-        await userManager.CreateAsync(user, "Password123!");
+        await roleManager.CreateAsync(new IdentityRole("Admin"));
     }
 
-    // Б) Создаем клиента для Postman 
-    var manager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
+    // Б) Создаем тестового пользователя
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+    var adminEmail = "admin@calendar.com";
+    var adminUser = await userManager.FindByEmailAsync(adminEmail);
+    if (adminUser == null)
+    {
+        adminUser = new ApplicationUser { UserName = adminEmail, Email = adminEmail };
+        await userManager.CreateAsync(adminUser, "Password123!");
+        await userManager.AddToRoleAsync(adminUser, "Admin");
+    }
+
+    // В) Создаем клиента для Postman 
+    var manager = services.GetRequiredService<OpenIddict.Abstractions.IOpenIddictApplicationManager>();
     if (await manager.FindByClientIdAsync("postman_client") is null)
     {
-        await manager.CreateAsync(new OpenIddictApplicationDescriptor
+        await manager.CreateAsync(new OpenIddict.Abstractions.OpenIddictApplicationDescriptor
         {
             ClientId = "postman_client",
+            ClientSecret = "postman-secret",
             DisplayName = "Postman Testing Client",
             RedirectUris = { new Uri("https://oauth.pstmn.io/v1/callback") },
             Permissions =
             {
-                OpenIddictConstants.Permissions.Endpoints.Authorization,
-                OpenIddictConstants.Permissions.Endpoints.Token,
-                OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode,
-                OpenIddictConstants.Permissions.ResponseTypes.Code, 
-                OpenIddictConstants.Permissions.Prefixes.Scope + "booking_api"
+                OpenIddict.Abstractions.OpenIddictConstants.Permissions.Endpoints.Authorization,
+                OpenIddict.Abstractions.OpenIddictConstants.Permissions.Endpoints.Token,
+                OpenIddict.Abstractions.OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode,
+                OpenIddict.Abstractions.OpenIddictConstants.Permissions.GrantTypes.RefreshToken,
+                OpenIddict.Abstractions.OpenIddictConstants.Permissions.ResponseTypes.Code, 
+                OpenIddict.Abstractions.OpenIddictConstants.Permissions.Prefixes.Scope + "booking_api",
+                OpenIddict.Abstractions.OpenIddictConstants.Permissions.Prefixes.Scope + "calendar_api",
+                OpenIddict.Abstractions.OpenIddictConstants.Permissions.Prefixes.Scope + "roles",
+                OpenIddict.Abstractions.OpenIddictConstants.Permissions.Prefixes.Scope + "email",
+                OpenIddict.Abstractions.OpenIddictConstants.Permissions.Prefixes.Scope + "profile"
             }
         });
     }
 }
-*/
+
 app.Run();

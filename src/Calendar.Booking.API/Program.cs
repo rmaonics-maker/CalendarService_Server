@@ -59,18 +59,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         
-        options.Authority = "http://localhost:8081/"; 
-        options.Audience = "booking_api";
+        options.Authority = builder.Configuration["Authentication:Authority"] ?? "http://localhost:8081/"; 
+        options.Audience = builder.Configuration["Authentication:Audience"] ?? "booking_api";
         options.RequireHttpsMetadata = false;
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuer = "http://localhost:8081/", 
+            ValidIssuer = builder.Configuration["Authentication:Authority"] ?? "http://localhost:8081/", 
             ValidateAudience = true,
-            ValidAudience = "booking_api",
+            ValidAudience = builder.Configuration["Authentication:Audience"] ?? "booking_api",
             ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
+            NameClaimType = "name",
+            RoleClaimType = "role"
         };
 
         

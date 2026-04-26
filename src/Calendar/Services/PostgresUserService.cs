@@ -2,6 +2,7 @@
 using Calendar_Service.Data;
 using Calendar_Service.Models;
 using Calendar.Contracts;
+using Calendar.Contracts.Dtos;
 using Calendar.Contracts.Responses;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -25,22 +26,16 @@ public class PostgresUserService(
         return user.Id;
     }
 
-    public async Task<UserHistoryResponse?> GetUserHistoryAsync(Guid userId, CancellationToken token = default)
+    public async Task<IEnumerable<HistoryItemDto>> GetUserHistoryAsync(Guid userId, CancellationToken token = default)
     {
         // TODO: Получать бронирования из Calendar.Booking.API через MassTransit
         var user = await context.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == userId, token);
 
-        if (user == null) return null;
+        if (user == null) return [];
 
-        return new UserHistoryResponse
-        {
-            UserId = user.Id,
-            Name = user.Name,
-            Balance = user.Balance,
-            Appointments = [] // TODO: Загрузить из Booking.API
-        };
+        return []; // TODO: Загрузить из Booking.API и вернуть объединённый список
     }
 
     public async Task<User?> GetUserAsync(Guid id, CancellationToken token = default)

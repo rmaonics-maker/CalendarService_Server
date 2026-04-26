@@ -29,6 +29,7 @@ public class AccountController(SignInManager<ApplicationUser> signInManager) : C
         [FromBody] RegisterRequest request, 
         [FromServices] UserManager<ApplicationUser> userManager,
         [FromServices] IPublishEndpoint publishEndpoint,
+        [FromServices] Calendar.Auth.API.Data.AuthDbContext dbContext,
         CancellationToken cancellationToken)
     { 
 // 1. Валидация логина на совпадение (проверка перед созданием)
@@ -44,23 +45,33 @@ public class AccountController(SignInManager<ApplicationUser> signInManager) : C
             UserName = request.Username, 
             Email = request.Email 
         };
-        
-// 3. Сохранение и публикация в транзакции
-        var result = await userManager.CreateAsync(user, request.Password);
 
-        if (!result.Succeeded)
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
-            return BadRequest(result.Errors);
-        }
-        
-// 4. Публикация интеграционного события
-        await publishEndpoint.Publish(new UserRegisteredEvent(
-            Id: Guid.Parse(user.Id),
-            Email: user.Email,
-            Name: user.UserName,
-            OccurredAt: DateTime.UtcNow
-        ), cancellationToken);
+// 3. Сохранение и публикация в транзакции
+            var result = await userManager.CreateAsync(user, request.Password);
 
-        return Ok(new { message = "Регистрация успешна" });
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+        
+// 4. Публикация интеграционного события (попадет в Outbox того же DbContext)
+            await publishEndpoint.Publish(new UserRegisteredEvent(
+                Id: Guid.Parse(user.Id),
+                Email: user.Email,
+                Name: user.UserName,
+                OccurredAt: DateTime.UtcNow
+            ), cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+            return Ok(new { message = "Регистрация успешна" });
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return StatusCode(500, new { message = "Ошибка при регистрации", details = ex.Message });
+        }
     }
 }

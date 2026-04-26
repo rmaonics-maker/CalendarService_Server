@@ -3,9 +3,9 @@ using MassTransit;
 
 namespace NotificationService;
 
-public class NotificationConsumer(ILogger<NotificationConsumer> logger) : IConsumer<EventCreated>
+public class NotificationConsumer(ILogger<NotificationConsumer> logger) : IConsumer<AppointmentCreatedEvent>
 {
-    public Task Consume(ConsumeContext<EventCreated> context)
+    public Task Consume(ConsumeContext<AppointmentCreatedEvent> context)
     {
         var message = context.Message;
 

@@ -104,14 +104,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.Authority = builder.Configuration["Authentication:Authority"] ?? "http://localhost:8081/"; 
-        options.Audience = builder.Configuration["Authentication:Audience"] ?? "auth_api";
+        options.Audience = builder.Configuration["Authentication:Audience"] ?? "calendar_api";
         options.RequireHttpsMetadata = false; // TODO: change to true in production
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = true,
-            ValidateIssuerSigningKey = true
+            ValidateIssuerSigningKey = true,
+            NameClaimType = "name",
+            RoleClaimType = "role"
         };
     });
 

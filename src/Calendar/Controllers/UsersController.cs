@@ -26,7 +26,7 @@ namespace Calendar_Service.Controllers
             {
                 // service layer
                 await service.CreateUserAsync(entity, token);
-                return CreatedAtAction(nameof(Create), new { id = entity.Id }, mapper.Map<UserResponse>(entity));
+                return CreatedAtAction(nameof(CreateUser), new { id = entity.Id }, mapper.Map<UserResponse>(entity));
             }
             catch (InvalidOperationException ex)
             {

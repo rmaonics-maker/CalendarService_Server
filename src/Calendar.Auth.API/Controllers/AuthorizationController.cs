@@ -42,12 +42,15 @@ public class AuthorizationController(UserManager<ApplicationUser> userManager) :
         nameClaim.SetDestinations(OpenIddictConstants.Destinations.AccessToken);
         identity.AddClaim(nameClaim);
 
-        var audClaim = new Claim(OpenIddictConstants.Claims.Audience, "booking_api");
-        audClaim.SetDestinations(OpenIddictConstants.Destinations.AccessToken);
-        identity.AddClaim(audClaim);
+        foreach (var role in await userManager.GetRolesAsync(user))
+        {
+            var roleClaim = new Claim(OpenIddictConstants.Claims.Role, role);
+            roleClaim.SetDestinations(OpenIddictConstants.Destinations.AccessToken);
+            identity.AddClaim(roleClaim);
+        }
 
         var principal = new ClaimsPrincipal(identity);
-        principal.SetResources("booking_api");
+        principal.SetResources("booking_api", "calendar_api");
         principal.SetScopes(request.GetScopes());
 
         return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);

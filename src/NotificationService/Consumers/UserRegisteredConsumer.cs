@@ -6,29 +6,28 @@ using NotificationService.Services;
 using NotificationService.Entities;
 
 namespace NotificationService.Consumers;
-public class UserRegisteredConsumer : IConsumer<UserRegisteredEvent>
+public class UserRegisteredConsumer(
+    NotificationDbContext dbContext,
+    IEmailService emailService,
+    ILogger<UserRegisteredConsumer> logger) : IConsumer<UserRegisteredEvent>
 {
-    private readonly NotificationDbContext _dbContext;
-    private readonly IEmailService _emailService;
-    private readonly ILogger<UserRegisteredConsumer> _logger;
-    
     public async Task Consume(ConsumeContext<UserRegisteredEvent> context)
     {
         var msg = context.Message;
-        _logger.LogInformation("Получено событие регистрации для пользователя: {UserId}", msg.Id);
-        var alreadySent = await _dbContext.EmailLogs
+        logger.LogInformation("Получено событие регистрации для пользователя: {UserId}", msg.Id);
+        var alreadySent = await dbContext.EmailLogs
         .AnyAsync(l => l.UserId == msg.Id && l.EmailType == "Welcome");
 
         if(alreadySent) return;
 
-        await _emailService.SendWelcomeEmailAsync(msg.UserEmail);
+        await emailService.SendWelcomeEmailAsync(msg.Email);
 
-        _dbContext.EmailLogs.Add(new EmailLog
+        dbContext.EmailLogs.Add(new EmailLog
         {
             UserId = msg.Id, 
             EmailType = "Welcome", 
             SentAt = DateTimeOffset.UtcNow 
         });
-        await _dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync();
     }
 }

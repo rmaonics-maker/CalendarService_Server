@@ -3,10 +3,10 @@ using MassTransit;
 
 namespace NotificationService.Consumers;
 
-public class BookingUpdatedConsumer(ILogger<BookingCreatedConsumer> logger) :
-    IConsumer<BookingUpdated>
+public class BookingUpdatedConsumer(ILogger<BookingUpdatedConsumer> logger) :
+    IConsumer<BookingUpdatedEvent>
 {
-    public Task Consume(ConsumeContext<BookingUpdated> context)
+    public Task Consume(ConsumeContext<BookingUpdatedEvent> context)
     {
         var message = context.Message;
         

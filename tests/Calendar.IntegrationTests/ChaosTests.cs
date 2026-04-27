@@ -1,4 +1,4 @@
-﻿using Calendar.Contracts.Events;
+using Calendar.Contracts.Events;
 using MassTransit;
 using NotificationService;
 
@@ -13,23 +13,21 @@ public class ChaosTests(CalendarApiFactory factory) : BaseIntegrationTest(factor
         var eventId = NewId.NextGuid();
         var userEmail = "retry@test.com";
 
-        await Harness.Bus.Publish(new EventCreated
-        {
-            AppointmentId = eventId,
-            Title = "Test event",
-            UserEmail = userEmail,
-            UserId = Guid.NewGuid(),
-            OccurredAt = DateTime.UtcNow.AddDays(1)
-        });
+        await Harness!.Bus.Publish(new AppointmentCreatedEvent(
+            AppointmentId: eventId,
+            Title: "Test event",
+            UserId: Guid.NewGuid(),
+            UserEmail: userEmail,
+            OccurredAt: DateTime.UtcNow.AddDays(1)
+        ));
 
         var consumerHarness = Harness.GetConsumerHarness<NotificationConsumer>();
         
         // Ждем, пока сообщение будет потреблено (с учетом повторных попыток)
-        // Используем await с таймаутом, чтобы дать время на обработку
         await Task.Delay(TimeSpan.FromSeconds(5));
         
         // Проверяем, что сообщение было потреблено NotificationConsumer
-        var consumed = await consumerHarness.Consumed.Any<EventCreated>(x => x.Context.Message.AppointmentId == eventId);
+        var consumed = await consumerHarness.Consumed.Any<AppointmentCreatedEvent>(x => x.Context.Message.AppointmentId == eventId);
         Assert.True(consumed, "Сообщение не было потреблено NotificationConsumer после повторных попыток");
     }
     
@@ -39,14 +37,13 @@ public class ChaosTests(CalendarApiFactory factory) : BaseIntegrationTest(factor
         var eventId = NewId.NextGuid();
         var userEmail = "fatal@test.com";
 
-        await Harness.Bus.Publish(new EventCreated
-        {
-            AppointmentId = eventId,
-            Title = "Test event",
-            UserEmail = userEmail,
-            UserId = Guid.NewGuid(),
-            OccurredAt = DateTime.UtcNow.AddDays(1)
-        });
+        await Harness!.Bus.Publish(new AppointmentCreatedEvent(
+            AppointmentId: eventId,
+            Title: "Test event",
+            UserId: Guid.NewGuid(),
+            UserEmail: userEmail,
+            OccurredAt: DateTime.UtcNow.AddDays(1)
+        ));
         
         var consumerHarness = Harness.GetConsumerHarness<NotificationConsumer>();
         
@@ -54,7 +51,7 @@ public class ChaosTests(CalendarApiFactory factory) : BaseIntegrationTest(factor
         await Task.Delay(TimeSpan.FromSeconds(2));
         
         // Проверяем, что сообщение было потреблено NotificationConsumer (даже с ошибкой)
-        var consumed = await consumerHarness.Consumed.Any<EventCreated>(x => x.Context.Message.AppointmentId == eventId);
+        var consumed = await consumerHarness.Consumed.Any<AppointmentCreatedEvent>(x => x.Context.Message.AppointmentId == eventId);
         Assert.True(consumed, "Сообщение не было потреблено NotificationConsumer");
     }
     
@@ -64,14 +61,13 @@ public class ChaosTests(CalendarApiFactory factory) : BaseIntegrationTest(factor
         var eventId = NewId.NextGuid();
         var userEmail = "success@test.com";
 
-        await Harness.Bus.Publish(new EventCreated
-        {
-            AppointmentId = eventId,
-            Title = "Test event",
-            UserEmail = userEmail,
-            UserId = Guid.NewGuid(),
-            OccurredAt = DateTime.UtcNow.AddDays(1)
-        });
+        await Harness!.Bus.Publish(new AppointmentCreatedEvent(
+            AppointmentId: eventId,
+            Title: "Test event",
+            UserId: Guid.NewGuid(),
+            UserEmail: userEmail,
+            OccurredAt: DateTime.UtcNow.AddDays(1)
+        ));
         
         var consumerHarness = Harness.GetConsumerHarness<NotificationConsumer>();
         
@@ -79,7 +75,7 @@ public class ChaosTests(CalendarApiFactory factory) : BaseIntegrationTest(factor
         await Task.Delay(TimeSpan.FromSeconds(2));
         
         // Проверяем, что сообщение было потреблено NotificationConsumer
-        var consumed = await consumerHarness.Consumed.Any<EventCreated>(x => x.Context.Message.AppointmentId == eventId);
+        var consumed = await consumerHarness.Consumed.Any<AppointmentCreatedEvent>(x => x.Context.Message.AppointmentId == eventId);
         Assert.True(consumed, "Сообщение не было потреблено NotificationConsumer");
     }
 }

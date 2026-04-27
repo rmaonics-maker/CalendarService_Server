@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Calendar.Contracts;
 using Calendar_Service.Models;
 using Calendar_Service.Services;
 using Calendar.Contracts.Requests;
@@ -10,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Calendar_Service.Controllers
 {
     [ApiController]
-    public class UsersController(ICalendarService service, IMapper mapper, IValidator<CreateUserRequest> validator) : ControllerBase
+    public class UsersController(IUserService service, IMapper mapper, IValidator<CreateUserRequest> validator) : ControllerBase
     {
         [HttpPost]
         public async Task<IActionResult> CreateUser(CreateUserRequest request, CancellationToken token)

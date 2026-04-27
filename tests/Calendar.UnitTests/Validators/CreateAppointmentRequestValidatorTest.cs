@@ -1,7 +1,6 @@
-﻿using AutoFixture;
+using AutoFixture;
 using Calendar_Service.Validators;
-using Calendar.Contracts;
-using Calendar.Contracts.Events;
+using Calendar.Contracts.Requests;
 using FluentValidation.TestHelper;
 
 namespace Calendar.UnitTests.Validators;
@@ -17,7 +16,7 @@ public class CreateAppointmentRequestValidatorTest
     public void Title_Should_HaveError_When_Empty()
     {
         // Arrange
-        var request = _fixture.Build<CreateEventRequest>()
+        var request = _fixture.Build<CreateAppointmentRequest>()
             .With(x => x.Title, "")
             .Create();
         // Act
@@ -33,7 +32,7 @@ public class CreateAppointmentRequestValidatorTest
     {
         // Arrange
         var longTitle = new string('A', 101);
-        var request = _fixture.Build<CreateEventRequest>()
+        var request = _fixture.Build<CreateAppointmentRequest>()
             .With(x => x.Title, longTitle)
             .Create();
         // Act
@@ -48,7 +47,7 @@ public class CreateAppointmentRequestValidatorTest
     public void Title_Should_NotHaveError_When_Valid()
     {
         // Arrange
-        var request = _fixture.Build<CreateEventRequest>()
+        var request = _fixture.Build<CreateAppointmentRequest>()
             .Create();
         
         // Act
@@ -67,7 +66,7 @@ public class CreateAppointmentRequestValidatorTest
     {
         // Arrange
         var longDescription = new string('A', 501);
-        var request = _fixture.Build<CreateEventRequest>()
+        var request = _fixture.Build<CreateAppointmentRequest>()
             .With(x => x.Description, longDescription)
             .Create();
         // Act
@@ -82,7 +81,7 @@ public class CreateAppointmentRequestValidatorTest
     public void Description_Should_NotHaveError_When_Valid()
     {
         // Arrange
-        var request = _fixture.Build<CreateEventRequest>()
+        var request = _fixture.Build<CreateAppointmentRequest>()
             .Create();
         // Act
         var result = _validator.TestValidate(request);
@@ -99,7 +98,7 @@ public class CreateAppointmentRequestValidatorTest
     public void Duration_Should_HaveError_When_Zero()
     {
         //Arrange
-        var request = _fixture.Build<CreateEventRequest>()
+        var request = _fixture.Build<CreateAppointmentRequest>()
             .With(x => x.Duration, TimeSpan.Zero)
             .Create();
         // Act
@@ -115,7 +114,7 @@ public class CreateAppointmentRequestValidatorTest
     public void Duration_Should_HaveError_When_Negative()
     {
         // Arrange
-        var request = _fixture.Build<CreateEventRequest>()
+        var request = _fixture.Build<CreateAppointmentRequest>()
             .With(x => x.Duration, TimeSpan.FromHours(-2))
             .Create();
         // Act
@@ -130,7 +129,7 @@ public class CreateAppointmentRequestValidatorTest
     public void Duration_Should_NotHaveError_When_Valid()
     {
         // Arrange
-        var request = _fixture.Build<CreateEventRequest>()
+        var request = _fixture.Build<CreateAppointmentRequest>()
             .Create();
         // Act
         var result = _validator.TestValidate(request);
@@ -147,7 +146,7 @@ public class CreateAppointmentRequestValidatorTest
     public void StartTime_Should_HaveError_When_Empty()
     {
         // Arrange
-        var request = _fixture.Build<CreateEventRequest>()
+        var request = _fixture.Build<CreateAppointmentRequest>()
             .With(x => x.StartTime, DateTimeOffset.MinValue)
             .Create();
         // Act
@@ -162,7 +161,7 @@ public class CreateAppointmentRequestValidatorTest
     public void StartTime_Should_HaveError_When_InPast()
     {
         // Arrange
-        var request = _fixture.Build<CreateEventRequest>()
+        var request = _fixture.Build<CreateAppointmentRequest>()
             .With(x => x.StartTime, DateTimeOffset.UtcNow.AddDays(-1))
             .Create();
         // Act
@@ -177,7 +176,7 @@ public class CreateAppointmentRequestValidatorTest
     public void StartTime_Should_HaveNotError_When_InFuture()
     {
         // Arrange
-        var request = _fixture.Build<CreateEventRequest>()
+        var request = _fixture.Build<CreateAppointmentRequest>()
             .With(x => x.StartTime, DateTimeOffset.UtcNow.AddDays(2))
             .Create();
         // Act
@@ -189,50 +188,18 @@ public class CreateAppointmentRequestValidatorTest
 
 #endregion
     
-#region UserID
-
-    [Fact]
-    public void UserId_Should_HaveError_When_Empty()
-    {
-        // Arrange
-        var request = _fixture.Build<CreateEventRequest>()
-            .With(x => x.UserId, Guid.Empty)
-            .Create();
-        // Act
-        var result = _validator.TestValidate(request);
-        
-        // Assert
-        result.ShouldHaveValidationErrorFor(x => x.UserId)
-            .WithErrorMessage("UserId is required and cannot be empty.");
-    }
-
-    [Fact]
-    public void UserId_Should_NotHaveError_When_Valid()
-    {
-        // Arrange
-        var request = _fixture.Build<CreateEventRequest>()
-            .Create();
-        // Act
-        var result = _validator.TestValidate(request);
-        
-        // Assert
-        result.ShouldNotHaveValidationErrorFor(x => x.UserId);
-    }
-#endregion
-
 #region Complex
     [Fact]
     public void Should_HaveMultipleErrors_When_MultipleFieldsInvalid()
     {
         // Arrange
-        var request = new CreateEventRequest(
+        var request = new CreateAppointmentRequest(
             Title: "",
             Description: new string('A', 501),
             StartTime: DateTimeOffset.UtcNow.AddDays(-1),
             Duration: TimeSpan.Zero,
             Location: "Test location",
-            RecurrentRule: null,
-            UserId: Guid.Empty);
+            RecurrentRule: null);
         
         // Act
         var result = _validator.TestValidate(request);
@@ -242,14 +209,13 @@ public class CreateAppointmentRequestValidatorTest
         result.ShouldHaveValidationErrorFor(x => x.Description);
         result.ShouldHaveValidationErrorFor(x => x.StartTime);
         result.ShouldHaveValidationErrorFor(x => x.Duration);
-        result.ShouldHaveValidationErrorFor(x => x.UserId);
     }
 
     [Fact]
     public void Should_NotHaveErrors_When_AllFieldsValid()
     {
         // Arrange
-        var request = _fixture.Build<CreateEventRequest>()
+        var request = _fixture.Build<CreateAppointmentRequest>()
             .With(x=>x.Title, "Test title")
             .With(x=>x.Description, "Test discription")
             .With(x=>x.Duration, TimeSpan.FromHours(6))

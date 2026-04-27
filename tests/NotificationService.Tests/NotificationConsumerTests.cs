@@ -1,4 +1,4 @@
-﻿using Calendar.Contracts.Events;
+using Calendar.Contracts.Events;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,14 +25,13 @@ public class NotificationConsumerTests
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        var message = new EventCreated
-        {
-            AppointmentId = Guid.NewGuid(),
-            Title = "Unit Test Event",
-            UserId = Guid.NewGuid(),
-            UserEmail = "test@unit.com",
-            OccurredAt = DateTime.UtcNow
-        };
+        var message = new AppointmentCreatedEvent(
+            AppointmentId: Guid.NewGuid(),
+            Title: "Unit Test Event",
+            UserId: Guid.NewGuid(),
+            UserEmail: "test@unit.com",
+            OccurredAt: DateTime.UtcNow
+        );
         
         try 
         {
@@ -41,14 +40,14 @@ public class NotificationConsumerTests
 
             // Assert
             //сообщение попало в шину
-            (await harness.Consumed.Any<EventCreated>()).Should().BeTrue();
+            (await harness.Consumed.Any<AppointmentCreatedEvent>()).Should().BeTrue();
             
             //потребитель обработал сообщение
             var consumerHarness = harness.GetConsumerHarness<NotificationConsumer>();
-            (await consumerHarness.Consumed.Any<EventCreated>()).Should().BeTrue();
+            (await consumerHarness.Consumed.Any<AppointmentCreatedEvent>()).Should().BeTrue();
             
             // не было ошибок
-            (await harness.Published.Any<Fault<EventCreated>>()).Should().BeFalse();
+            (await harness.Published.Any<Fault<AppointmentCreatedEvent>>()).Should().BeFalse();
         }
         finally
         {

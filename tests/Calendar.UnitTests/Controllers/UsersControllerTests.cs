@@ -1,9 +1,9 @@
-﻿using AutoFixture;
+using AutoFixture;
 using AutoMapper;
 using Calendar_Service.Controllers;
 using Calendar_Service.Models;
 using Calendar_Service.Services;
-using Calendar.Contracts;
+using Calendar.Contracts.Dtos;
 using Calendar.Contracts.Requests;
 using Calendar.Contracts.Responses;
 using FluentAssertions;
@@ -20,7 +20,7 @@ namespace Calendar.UnitTests.Controllers;
 public class UsersControllerTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
-    private readonly ICalendarService _service;
+    private readonly IUserService _service;
     private readonly IMapper _mapper;
     private readonly IValidator<CreateUserRequest> _validator;
     private readonly IFixture _fixture;
@@ -30,7 +30,7 @@ public class UsersControllerTests
     {
         _testOutputHelper = testOutputHelper;
         _fixture = new Fixture();
-        _service = Substitute.For<ICalendarService>();
+        _service = Substitute.For<IUserService>();
         _mapper = Substitute.For<IMapper>();
         _validator = Substitute.For<IValidator<CreateUserRequest>>();
         _validator.ValidateAsync(Arg.Any<CreateUserRequest>(), CancellationToken.None)
@@ -49,7 +49,7 @@ public class UsersControllerTests
         _validator.ValidateAsync(request, CancellationToken.None).Returns(validationResult);
         
         // Act
-        var result = await _sut.Create(request, CancellationToken.None);
+        var result = await _sut.CreateUser(request, CancellationToken.None);
 
         // Assert
         var badRequest = result.Should().BeOfType<BadRequestObjectResult>().Subject;
@@ -67,13 +67,13 @@ public class UsersControllerTests
     {
         // Arrange
         var request = _fixture.Create<CreateUserRequest>();
-        var user = _fixture.Build<User>().Without(x=>x.Bookings).Create();
+        var user = _fixture.Create<User>();
         _mapper.Map<User>(request).Returns(user);
         var errorMessage = "User with this email already exists";
         _service.CreateUserAsync(user, CancellationToken.None).Throws(new InvalidOperationException(errorMessage));
         
         // Act
-        var result = await _sut.Create(request, CancellationToken.None);
+        var result = await _sut.CreateUser(request, CancellationToken.None);
 
         // Assert
         var conflict = result.Should().BeOfType<ConflictObjectResult>().Subject;
@@ -91,18 +91,18 @@ public class UsersControllerTests
     {
         // Arrange
         var request = _fixture.Create<CreateUserRequest>();
-        var user = _fixture.Build<User>().Without(x=>x.Bookings).Create();
+        var user = _fixture.Create<User>();
         _mapper.Map<User>(request).Returns(user);
         _mapper.Map<UserResponse>(user)
-            .Returns(new UserResponse { Id = user.Id, Email = user.Email, Name = user.Name });
+            .Returns(new UserResponse(user.Id, user.Name, user.Email));
         // Act
-        var result = await _sut.Create(request, CancellationToken.None);
+        var result = await _sut.CreateUser(request, CancellationToken.None);
 
         // Assert
         var created = result.Should().BeOfType<CreatedAtActionResult>().Subject;
         created.StatusCode.Should().Be(201);
         created.RouteValues["id"].Should().Be(user.Id);
-        created.ActionName.Should().Be(nameof(UsersController.Create));
+        created.ActionName.Should().Be(nameof(UsersController.CreateUser));
         created.Value.Should().BeOfType<UserResponse>();
 
         var response = (UserResponse)created.Value;
@@ -133,10 +133,8 @@ public class UsersControllerTests
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var response = _fixture.Build<UserHistoryResponse>()
-            .With(x => x.UserId, userId)
-            .Create();
-        _service.GetUserHistoryAsync(userId, CancellationToken.None).Returns(response);
+        var history = _fixture.CreateMany<HistoryItemDto>(3);
+        _service.GetUserHistoryAsync(userId, CancellationToken.None).Returns(history);
         
         // Act
         var result = await _sut.GetUserHistory(userId, CancellationToken.None);
@@ -144,8 +142,6 @@ public class UsersControllerTests
         // Assert
         var objectResult = result.Should().BeOfType<OkObjectResult>().Subject;
         objectResult.StatusCode.Should().Be(200);
-        objectResult.Value.Should().BeOfType<UserHistoryResponse>();
-        var okResponse = (UserHistoryResponse)objectResult.Value;
-        okResponse.UserId.Should().Be(userId);
+        objectResult.Value.Should().Be(history);
     }
 }

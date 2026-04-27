@@ -98,7 +98,7 @@ public class CreateUserRequestValidatorTest
         var request = new CreateUserRequest(
             Name: "",
             Email: "",
-            Balance: 0m);
+            InitialBalance: 0m);
         // Act
         var result = _validator.TestValidate(request);
         
@@ -114,7 +114,7 @@ public class CreateUserRequestValidatorTest
         var request = new CreateUserRequest(
             Name: "Test Name",
             Email: "test@email.com",
-            Balance: 1m);
+            InitialBalance: 1m);
         // Act
         var result = _validator.TestValidate(request);
         

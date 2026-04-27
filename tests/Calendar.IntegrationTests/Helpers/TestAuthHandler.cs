@@ -20,9 +20,10 @@ public class TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> option
         var claims = new[]
         {
             new Claim(ClaimTypes.Name, "Test User"),
-            new Claim(ClaimTypes.NameIdentifier, "test-user-id-123"),
+            new Claim(ClaimTypes.NameIdentifier, "00000000-0000-0000-0000-000000000001"),
             new Claim(ClaimTypes.Email, "test@example.com"),
-            new Claim(ClaimTypes.Role, "Admin")
+            new Claim(ClaimTypes.Role, "Admin"),
+            new Claim("sub", "00000000-0000-0000-0000-000000000001")
         };
 
         var identity = new ClaimsIdentity(claims, AuthenticationScheme);

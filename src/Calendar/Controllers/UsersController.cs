@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Calendar_Service.Controllers
 {
     [ApiController]
+    [Route("api/v1/users")]
     public class UsersController(IUserService service, IMapper mapper, IValidator<CreateUserRequest> validator) : ControllerBase
     {
         [HttpPost]

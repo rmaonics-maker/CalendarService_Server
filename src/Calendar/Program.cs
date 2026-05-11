@@ -26,36 +26,47 @@ builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection(Rab
 builder.Services.AddMassTransit(x =>
 {
     x.SetKebabCaseEndpointNameFormatter();
-    x.AddEntityFrameworkOutbox<ApplicationDbContext>(o =>
-    {
-        o.UsePostgres();
-        o.UseBusOutbox();
-
-        o.DuplicateDetectionWindow = TimeSpan.FromMinutes(30);
-
-        o.QueryDelay = TimeSpan.FromSeconds(2);
-        o.QueryMessageLimit = 100;
-    });
-    
-    x.AddConfigureEndpointsCallback((context, name, cfg) =>
-    {
-        cfg.UseEntityFrameworkOutbox<ApplicationDbContext>(context);
-    });
-    
-    x.UsingRabbitMq((context, cfg) =>
-    {
-        var rabbitMqOptions = context.GetRequiredService<Microsoft.Extensions.Options.IOptions<RabbitMqOptions>>().Value;
-        rabbitMqOptions.Validate();
-        cfg.Host(rabbitMqOptions.Host, rabbitMqOptions.VirtualHost, h =>
-        {
-            h.Username(rabbitMqOptions.Username);
-            h.Password(rabbitMqOptions.Password);
-        });
-
-        cfg.ConfigureEndpoints(context);
-    });
 
     x.AddConsumer<UserRegisteredConsumer>();
+
+    if (builder.Environment.IsEnvironment("Testing"))
+    {
+        x.UsingInMemory((context, cfg) =>
+        {
+            cfg.ConfigureEndpoints(context);
+        });
+    }
+    else
+    {
+        x.AddEntityFrameworkOutbox<ApplicationDbContext>(o =>
+        {
+            o.UsePostgres();
+            o.UseBusOutbox();
+
+            o.DuplicateDetectionWindow = TimeSpan.FromMinutes(30);
+
+            o.QueryDelay = TimeSpan.FromSeconds(2);
+            o.QueryMessageLimit = 100;
+        });
+
+        x.AddConfigureEndpointsCallback((context, name, cfg) =>
+        {
+            cfg.UseEntityFrameworkOutbox<ApplicationDbContext>(context);
+        });
+
+        x.UsingRabbitMq((context, cfg) =>
+        {
+            var rabbitMqOptions = context.GetRequiredService<Microsoft.Extensions.Options.IOptions<RabbitMqOptions>>().Value;
+            rabbitMqOptions.Validate();
+            cfg.Host(rabbitMqOptions.Host, rabbitMqOptions.VirtualHost, h =>
+            {
+                h.Username(rabbitMqOptions.Username);
+                h.Password(rabbitMqOptions.Password);
+            });
+
+            cfg.ConfigureEndpoints(context);
+        });
+    }
 });
 
 builder.Services.AddSwaggerGen(c => 
@@ -90,6 +101,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(option => option
             .UseSnakeCaseNamingConvention());
 
 builder.Services.AddScoped<IUserService, PostgresUserService>();
+builder.Services.AddScoped<IAppointmentService, PostgresAppointmentService>();
 
 var secretPath = "/run/secrets";
 if(Directory.Exists(secretPath))
@@ -132,6 +144,9 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

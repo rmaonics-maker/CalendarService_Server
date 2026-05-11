@@ -1,15 +1,14 @@
 ﻿namespace Calendar.Contracts.Dtos;
-/// <summary>
-/// DTO для личного события
-/// Используется во всех сервисах для передачи данных о событии
-/// </summary>
-public sealed record AppointmentDto(
-    Guid Id,
-    string Title,
-    string Description,
-    DateTimeOffset StartTime,
-    TimeSpan Duration,
-    string Location,
-    string? RecurrentRule,
-    Guid UserId,
-    DateTime? CreatedAt);
+
+public sealed record AppointmentDto
+{
+    public Guid Id { get; init; }
+    public string Title { get; init; } = default!;
+    public string Description { get; init; } = default!;
+    public DateTimeOffset StartTime { get; init; }
+    public TimeSpan Duration { get; init; }
+    public string Location { get; init; } = default!;
+    public string? RecurrentRule { get; init; }
+    public Guid UserId { get; init; }
+    public DateTime? CreatedAt { get; init; }
+}

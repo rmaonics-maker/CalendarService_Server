@@ -10,7 +10,7 @@ using Calendar.IntegrationTests.Helpers;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
+
 using NotificationService;
 
 namespace Calendar.IntegrationTests
@@ -22,6 +22,11 @@ namespace Calendar.IntegrationTests
             .WithUsername("postgres")
             .WithPassword("test_password")
             .Build();
+
+        public CalendarApiFactory()
+        {
+            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Testing");
+        }
 
         public string DbConnectionString => _dbContainer.GetConnectionString();
         public ITestHarness? Harness { get; private set; }
@@ -49,9 +54,6 @@ namespace Calendar.IntegrationTests
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
-            // Устанавливаем переменную окружения для отключения Health Checks в тестах
-            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Testing");
-            
             builder.ConfigureTestServices(services =>
             {
                 services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
@@ -69,47 +71,10 @@ namespace Calendar.IntegrationTests
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
                    TestAuthHandler.AuthenticationScheme, options => { });
 
-               services.Configure<HealthCheckServiceOptions>(options =>
-               {
-                   var mtRegistration = options.Registrations.FirstOrDefault(x =>
-                       x.Name == "masstransit-bus");
-
-                   if (mtRegistration != null)
-                   {
-                       options.Registrations.Remove(mtRegistration);
-                   }
-               });
-               
                services.AddMassTransitTestHarness(x =>
-                {
-                    x.SetKebabCaseEndpointNameFormatter();
-                    
-                    // Регистрация NotificationConsumer для тестирования
-                    x.AddConsumer<NotificationConsumer>();
-                    
-                    // В тестовой среде не используем Outbox, так как он несовместим с InMemory transport
-                    // Outbox предназначен для production с реальными message brokers
-                    
-                    x.UsingInMemory((context, cfg) =>
-                    {
-                        // Политика повторных попыток, аналогичная production конфигурации
-                        cfg.UseMessageRetry(r =>
-                        {
-                            r.Exponential(5, TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(2),
-                                TimeSpan.FromMilliseconds(200));
-                            
-                            // Фильтрация исключений
-                            r.Handle<TimeoutException>();
-                            r.Handle<HttpRequestException>(ex =>
-                                ex.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable);
-                            
-                            r.Ignore<ArgumentException>();
-                            r.Ignore<NullReferenceException>();
-                        });
-                        
-                        cfg.ConfigureEndpoints(context);
-                    });
-                });
+               {
+                   x.AddConsumer<NotificationConsumer>();
+               });
             });
         }
     }

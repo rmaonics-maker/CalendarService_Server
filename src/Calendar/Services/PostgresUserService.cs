@@ -16,9 +16,11 @@ public class PostgresUserService(
     IPublishEndpoint publishEndpoint) :
     IUserService
 {
-    public async Task<Guid> CreateUserAsync(User user, CancellationToken token = default)
+    public async Task<Guid> CreateUserAsync(UserDto user, CancellationToken token = default)
     {
-        context.Users.Add(user);
+        var userEntity = mapper.Map<User>(user);
+        userEntity.Balance = 0;
+        context.Users.Add(userEntity);
         await context.SaveChangesAsync(token);
 
         logger.LogInformation("Создан пользователь: ID={UserId}, Email={Email}", user.Id, user.Email);
@@ -38,11 +40,13 @@ public class PostgresUserService(
         return []; // TODO: Загрузить из Booking.API и вернуть объединённый список
     }
 
-    public async Task<User?> GetUserAsync(Guid id, CancellationToken token = default)
+    public async Task<UserDto?> GetUserAsync(Guid id, CancellationToken token = default)
     {
-        return await context.Users
+        var user = await context.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == id, token);
+        
+        return mapper.Map<UserDto>(user);
     }
 
     public async Task<bool> UpdateBalanceAsync(Guid userId, decimal newBalance, CancellationToken token = default)

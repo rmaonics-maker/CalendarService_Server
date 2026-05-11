@@ -59,7 +59,7 @@ public class UsersControllerTests
         problem.Errors.Should().HaveCount(1);
         problem.Errors.Should().Contain(e => e.Key == "Email" && e.Value.AsEnumerable().Contains("Email is required"));
 
-        await _service.DidNotReceive().CreateUserAsync(Arg.Any<User>(), CancellationToken.None);
+        await _service.DidNotReceive().CreateUserAsync(Arg.Any<UserDto>(), CancellationToken.None);
     }
 
     [Fact]
@@ -67,8 +67,8 @@ public class UsersControllerTests
     {
         // Arrange
         var request = _fixture.Create<CreateUserRequest>();
-        var user = _fixture.Create<User>();
-        _mapper.Map<User>(request).Returns(user);
+        var user = _fixture.Create<UserDto>();
+        _mapper.Map<UserDto>(request).Returns(user);
         var errorMessage = "User with this email already exists";
         _service.CreateUserAsync(user, CancellationToken.None).Throws(new InvalidOperationException(errorMessage));
         
@@ -91,10 +91,10 @@ public class UsersControllerTests
     {
         // Arrange
         var request = _fixture.Create<CreateUserRequest>();
-        var user = _fixture.Create<User>();
-        _mapper.Map<User>(request).Returns(user);
+        var user = _fixture.Create<UserDto>();
+        _mapper.Map<UserDto>(request).Returns(user);
         _mapper.Map<UserResponse>(user)
-            .Returns(new UserResponse(user.Id, user.Name, user.Email));
+            .Returns(new UserResponse { Id = user.Id, Name = user.Name, Email = user.Email });
         // Act
         var result = await _sut.CreateUser(request, CancellationToken.None);
 

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Calendar_Service.Models;
 using Calendar_Service.Services;
+using Calendar.Contracts.Dtos;
 using Calendar.Contracts.Requests;
 using Calendar.Contracts.Responses;
 using FluentValidation;
@@ -20,13 +21,13 @@ namespace Calendar_Service.Controllers
             if (!validationResult.IsValid)
                 return ValidationProblem(new ValidationProblemDetails(validationResult.ToDictionary()));
 
-            // Dto -> Entity
-            var entity = mapper.Map<User>(request);
+            // Dto
+            var userDto = mapper.Map<UserDto>(request);
             try
             {
                 // service layer
-                await service.CreateUserAsync(entity, token);
-                return CreatedAtAction(nameof(CreateUser), new { id = entity.Id }, mapper.Map<UserResponse>(entity));
+                var id = await service.CreateUserAsync(userDto, token);
+                return CreatedAtAction(nameof(CreateUser), id, mapper.Map<UserResponse>(userDto));
             }
             catch (InvalidOperationException ex)
             {

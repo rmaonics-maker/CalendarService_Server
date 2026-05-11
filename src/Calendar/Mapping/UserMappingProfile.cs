@@ -11,7 +11,10 @@ namespace Calendar_Service.Mapping
     {
         public UserMappingProfile()
         {
-            CreateMap<CreateUserRequest, UserDto>();
+            CreateMap<CreateUserRequest, UserDto>()
+                .ForMember(dest => dest.Id, 
+                    opt => opt.MapFrom(
+                        src => Guid.NewGuid()));
 
             CreateMap<UserRegisteredEvent, UserDto>();
             
@@ -19,7 +22,9 @@ namespace Calendar_Service.Mapping
 
             CreateMap<UserDto, UserResponse>();
             
-            CreateMap<UserDto, User>();
+            CreateMap<UserDto, User>()
+                .ForMember(dest => dest.Version, opt => opt.Ignore())
+                ;
         }
     }
 }

@@ -63,7 +63,8 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Calendar API", Version = "v1" });
 });
 
-builder.Services.AddAutoMapper(typeof(Program));
+builder.Services.AddAutoMapper(config => 
+    config.AddMaps(typeof(Program)));
 
 builder.Services.AddMemoryCache();
 

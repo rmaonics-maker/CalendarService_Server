@@ -18,30 +18,48 @@ namespace Calendar_Service.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.3")
+                .HasAnnotation("ProductVersion", "10.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "btree_gist");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Calendar_Service.Models.Booking", b =>
+            modelBuilder.Entity("Calendar_Service.Models.Appointment", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("location");
+
                     b.Property<NpgsqlRange<DateTime>>("Period")
-                        .HasColumnType("tsrange")
+                        .HasColumnType("tstzrange")
                         .HasColumnName("period");
 
-                    b.Property<int>("RoomId")
-                        .HasColumnType("integer")
-                        .HasColumnName("room_id");
+                    b.Property<string>("RecurrentRule")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("recurrent_rule");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
                         .HasColumnName("title");
 
                     b.Property<Guid>("UserId")
@@ -55,17 +73,12 @@ namespace Calendar_Service.Migrations
                         .HasColumnName("xmin");
 
                     b.HasKey("Id")
-                        .HasName("pk_bookings");
-
-                    b.HasIndex("Period")
-                        .HasDatabaseName("ix_bookings_period");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Period"), "gist");
+                        .HasName("pk_events");
 
                     b.HasIndex("UserId")
-                        .HasDatabaseName("ix_bookings_user_id");
+                        .HasDatabaseName("ix_events_user_id");
 
-                    b.ToTable("bookings", (string)null);
+                    b.ToTable("events", (string)null);
                 });
 
             modelBuilder.Entity("Calendar_Service.Models.User", b =>
@@ -88,7 +101,8 @@ namespace Calendar_Service.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
                         .HasColumnName("name");
 
                     b.Property<uint>("Version")
@@ -328,21 +342,14 @@ namespace Calendar_Service.Migrations
                     b.ToTable("outbox_state", (string)null);
                 });
 
-            modelBuilder.Entity("Calendar_Service.Models.Booking", b =>
+            modelBuilder.Entity("Calendar_Service.Models.Appointment", b =>
                 {
-                    b.HasOne("Calendar_Service.Models.User", "User")
-                        .WithMany("Bookings")
+                    b.HasOne("Calendar_Service.Models.User", null)
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_bookings_users_user_id");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Calendar_Service.Models.User", b =>
-                {
-                    b.Navigation("Bookings");
+                        .HasConstraintName("fk_events_users_user_id");
                 });
 #pragma warning restore 612, 618
         }

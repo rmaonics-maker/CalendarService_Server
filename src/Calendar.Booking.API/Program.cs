@@ -49,7 +49,8 @@ builder.Services.AddMassTransit(x =>
     });
 });
 
-builder.Services.AddAutoMapper(typeof(Program).Assembly);
+builder.Services.AddAutoMapper(config => 
+    config.AddMaps(typeof(Program)));
 
 builder.Services.AddAuthorization();
 

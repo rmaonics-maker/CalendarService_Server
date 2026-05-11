@@ -67,3 +67,5 @@ src/Calendar/secrets/db_password.txt
 plans/
 src/Calendar.Auth.API/secrets/
 .idea/
+appsettings.Development.json
+.kilo/

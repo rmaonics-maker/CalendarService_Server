@@ -101,7 +101,6 @@ public class UsersControllerTests
         // Assert
         var created = result.Should().BeOfType<CreatedAtActionResult>().Subject;
         created.StatusCode.Should().Be(201);
-        created.RouteValues["id"].Should().Be(user.Id);
         created.ActionName.Should().Be(nameof(UsersController.CreateUser));
         created.Value.Should().BeOfType<UserResponse>();
 

@@ -5,6 +5,7 @@ using FluentAssertions;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 
 namespace Calendar.UnitTests.Services;
@@ -12,10 +13,6 @@ namespace Calendar.UnitTests.Services;
 public class PostgresAppointmentServiceTests
 {
     private readonly IAppointmentService _service;
-    private readonly ApplicationDbContext _context;
-    private readonly ILogger<PostgresAppointmentService> _logger;
-    private readonly IPublishEndpoint _endPoint;
-    private readonly IMapper _mapper;
 
     public PostgresAppointmentServiceTests()
     {
@@ -23,11 +20,12 @@ public class PostgresAppointmentServiceTests
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
-        _context = new ApplicationDbContext(options);
-        _logger = Substitute.For<ILogger<PostgresAppointmentService>>();
-        _endPoint = Substitute.For<IPublishEndpoint>();
-        _mapper = Substitute.For<IMapper>();
-        _service = new PostgresAppointmentService(_context, _endPoint, _mapper, _logger);
+        var context = new ApplicationDbContext(options);
+        var logger = Substitute.For<ILogger<PostgresAppointmentService>>();
+        var endPoint = Substitute.For<IPublishEndpoint>();
+        var mapper = Substitute.For<IMapper>();
+        var timeProvider = new FakeTimeProvider();
+        _service = new PostgresAppointmentService(context, endPoint, mapper, logger, timeProvider);
     }
     
     [Fact]

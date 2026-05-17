@@ -7,14 +7,14 @@ namespace Calendar_Service.Models;
 public sealed class Appointment
 {
     public Guid Id { get; init; }
-    public string Title { get; set; } 
-    public string Description { get; init; } 
+    public required string Title { get; init; } 
+    public required string Description { get; init; } 
     public NpgsqlRange<DateTime> Period { get; init; } 
-    public string Location { get; init; } 
+    public required string Location { get; init; } 
     public string? RecurrentRule { get; init; }
-    public Guid UserId { get; set; }
-    public DateTime CreatedAtUtc { get; set; }
-    public uint Version { get; set; }
+    public Guid UserId { get; init; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public uint Version { get; init; }
 }
 
 public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
@@ -30,7 +30,7 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
         builder.Property(e => e.Location).HasMaxLength(200).IsRequired();
         builder.Property(e => e.RecurrentRule).HasMaxLength(200);
         builder.Property(e => e.UserId).IsRequired();
-        builder.Property(e => e.CreatedAtUtc).IsRequired();
+        builder.Property(e => e.CreatedAt).IsRequired();
         builder.Property(e => e.Version).IsRowVersion();
 
         builder.HasIndex(e => e.UserId);

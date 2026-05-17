@@ -10,5 +10,5 @@ public sealed record BookingUpdatedEvent(
     int NewRoomId,
     DateTime NewStartTimeUtc,
     DateTime NewEndTimeUtc,
-    DateTime OccurredAt
+    DateTimeOffset OccurredAt
 );

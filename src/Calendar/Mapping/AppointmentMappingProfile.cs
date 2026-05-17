@@ -21,7 +21,7 @@ public class AppointmentMappingProfile : Profile
                 new NpgsqlRange<DateTime>(
                     src.StartTime.UtcDateTime,
                     src.StartTime.UtcDateTime + src.Duration)))
-            .ForMember(dest => dest.CreatedAtUtc, opt => opt.MapFrom(src =>
+            .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src =>
                 src.CreatedAt ?? DateTime.UtcNow))
             .ForMember(dest => dest.Version, opt => opt.Ignore());
 
@@ -30,7 +30,7 @@ public class AppointmentMappingProfile : Profile
                 new DateTimeOffset(src.Period.LowerBound, TimeSpan.Zero)))
             .ForMember(dest => dest.Duration, opt => opt.MapFrom(src =>
                 src.Period.UpperBound - src.Period.LowerBound))
-            .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAtUtc));
+            .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt));
 
         CreateMap<AppointmentDto, AppointmentResponse>();
     }

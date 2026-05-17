@@ -3,12 +3,12 @@
 public sealed record AppointmentDto
 {
     public Guid Id { get; init; }
-    public string Title { get; init; } = default!;
-    public string Description { get; init; } = default!;
+    public string? Title { get; init; } 
+    public string? Description { get; init; } 
     public DateTimeOffset StartTime { get; init; }
     public TimeSpan Duration { get; init; }
-    public string Location { get; init; } = default!;
+    public string? Location { get; init; } 
     public string? RecurrentRule { get; init; }
     public Guid UserId { get; init; }
-    public DateTime? CreatedAt { get; init; }
+    public DateTimeOffset? CreatedAt { get; init; }
 }

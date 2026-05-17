@@ -9,5 +9,5 @@ public sealed record BookingDeletedEvent(
     Guid UserId,
     Guid? AppointmentId,  // Опциональная ссылка на событие
     decimal RefundAmount,
-    DateTime OccurredAt
+    DateTimeOffset OccurredAt
 );

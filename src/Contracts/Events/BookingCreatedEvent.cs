@@ -12,5 +12,5 @@ public sealed record BookingCreatedEvent(
     DateTime StartTimeUtc,
     DateTime EndTimeUtc,
     Guid? AppointmentId,  // Опциональная ссылка на событие
-    DateTime OccurredAt
+    DateTimeOffset OccurredAt
 );

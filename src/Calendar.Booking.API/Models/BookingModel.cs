@@ -12,7 +12,7 @@ public sealed class BookingModel
     public Guid? AppointmentId { get; init; }
     public int RoomId { get; set; }
     public NpgsqlRange<DateTime> Period { get; set; }
-    public DateTime CreatedAtUtc { get; init; }
+    public DateTimeOffset CreatedAt { get; set; }
     public uint Version { get; init; }
 }
 
@@ -27,7 +27,7 @@ public sealed class BookingConfiguration : IEntityTypeConfiguration<BookingModel
         builder.Property(b => b.UserId).IsRequired();
         builder.Property(b => b.RoomId).IsRequired();
         builder.Property(b => b.Period).IsRequired();
-        builder.Property(b => b.CreatedAtUtc).IsRequired();
+        builder.Property(b => b.CreatedAt).IsRequired();
         builder.Property(b => b.Version).IsRowVersion();
 
         // GiST индекс для range запросов

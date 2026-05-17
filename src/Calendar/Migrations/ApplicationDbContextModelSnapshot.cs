@@ -31,9 +31,9 @@ namespace Calendar_Service.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<DateTime>("CreatedAtUtc")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at_utc");
+                        .HasColumnName("created_at");
 
                     b.Property<string>("Description")
                         .IsRequired()

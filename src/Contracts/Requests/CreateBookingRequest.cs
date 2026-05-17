@@ -6,6 +6,6 @@
 public sealed record CreateBookingRequest(
     string Title,
     int RoomId,
-    DateTime StartTimeUtc,
-    DateTime EndTimeUtc,
+    DateTimeOffset StartTimeUtc,
+    DateTimeOffset EndTimeUtc,
     Guid? AppointmentId);

@@ -10,5 +10,5 @@ public sealed record AppointmentCreatedEvent(
     string Title,
     Guid UserId,
     string? UserEmail,
-    DateTime OccurredAt);
+    DateTimeOffset OccurredAt);
 

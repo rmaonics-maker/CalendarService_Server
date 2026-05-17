@@ -14,7 +14,8 @@ public class PostgresBookingService(
     BookingDbContext context,
     IPublishEndpoint publishEndpoint,
     ILogger<PostgresBookingService> logger,
-    IMapper mapper) : IBookingService
+    IMapper mapper,
+    TimeProvider timeProvider) : IBookingService
 {
     public async Task<IEnumerable<BookingDto>> GetBookingsAsync(Guid userId, CancellationToken token = default)
     {
@@ -44,6 +45,7 @@ public class PostgresBookingService(
         {
             var bookingModel = mapper.Map<BookingModel>(bookingDto);
             bookingModel.UserId = userId;
+            bookingModel.CreatedAt = timeProvider.GetUtcNow();
             context.Bookings.Add(bookingModel);
             await context.SaveChangesAsync(token);
 
@@ -57,7 +59,7 @@ public class PostgresBookingService(
                 StartTimeUtc: bookingModel.Period.LowerBound,
                 EndTimeUtc: bookingModel.Period.UpperBound,
                 AppointmentId: bookingModel.AppointmentId,
-                OccurredAt: DateTime.UtcNow
+                OccurredAt: timeProvider.GetUtcNow()
             ), token);
 
             await transaction.CommitAsync(token);
@@ -96,8 +98,8 @@ public class PostgresBookingService(
             booking.Title = bookingDto.Title;
             booking.RoomId = bookingDto.RoomId;
             booking.Period = new NpgsqlRange<DateTime>(
-                EnsureUtcUnspecified(bookingDto.StartTimeUtc),
-                EnsureUtcUnspecified(bookingDto.EndTimeUtc)
+                bookingDto.StartTimeUtc.UtcDateTime,
+                bookingDto.EndTimeUtc.UtcDateTime
             );
 
             await context.SaveChangesAsync(token);
@@ -110,7 +112,7 @@ public class PostgresBookingService(
                 NewRoomId: booking.RoomId,
                 NewStartTimeUtc: booking.Period.LowerBound,
                 NewEndTimeUtc: booking.Period.UpperBound,
-                OccurredAt: DateTime.UtcNow
+                OccurredAt: timeProvider.GetUtcNow()
             ), token);
 
             await transaction.CommitAsync(token);
@@ -153,7 +155,7 @@ public class PostgresBookingService(
                 UserId: userId,
                 AppointmentId: booking.AppointmentId,
                 RefundAmount: 10m, // TODO: добавить стоимость
-                OccurredAt: DateTime.UtcNow
+                OccurredAt: timeProvider.GetUtcNow()
             ), token);
 
             await transaction.CommitAsync(token);
@@ -168,13 +170,5 @@ public class PostgresBookingService(
             logger.LogError(ex, "Ошибка при удалении бронирования {BookingId}", id);
             throw;
         }
-    }
-
-    private static DateTime EnsureUtcUnspecified(DateTime dateTime)
-    {
-        if (dateTime.Kind == DateTimeKind.Unspecified)
-            return dateTime;
-
-        return DateTime.SpecifyKind(dateTime, DateTimeKind.Unspecified);
     }
 }

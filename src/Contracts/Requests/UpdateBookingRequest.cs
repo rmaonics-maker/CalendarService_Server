@@ -6,5 +6,5 @@
 public sealed record UpdateBookingRequest(
     string Title,
     int RoomId,
-    DateTime StartTimeUtc,
-    DateTime EndTimeUtc);
+    DateTimeOffset StartTimeUtc,
+    DateTimeOffset EndTimeUtc);

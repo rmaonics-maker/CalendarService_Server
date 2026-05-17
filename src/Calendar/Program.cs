@@ -132,6 +132,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
     
+builder.Services.AddSingleton(TimeProvider.System);
+
 var app = builder.Build();
 
 

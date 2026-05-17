@@ -13,7 +13,8 @@ public class PostgresAppointmentService(
     ApplicationDbContext context,
     IPublishEndpoint publishEndpoint,
     IMapper mapper,
-    ILogger<PostgresAppointmentService> logger) : IAppointmentService
+    ILogger<PostgresAppointmentService> logger,
+    TimeProvider timeProvider) : IAppointmentService
 {
     public async Task<AppointmentDto> CreateAppointmentAsync(AppointmentDto evt, CancellationToken token = default)
     {
@@ -22,7 +23,7 @@ public class PostgresAppointmentService(
         try
         {
             var appointment = mapper.Map<Appointment>(evt);
-            appointment.CreatedAtUtc = DateTime.UtcNow;
+            appointment.CreatedAt = timeProvider.GetUtcNow();
             context.Appointments.Add(appointment);
             await context.SaveChangesAsync(token);
 
@@ -35,7 +36,7 @@ public class PostgresAppointmentService(
                 Title: appointment.Title,
                 UserId: appointment.UserId,
                 UserEmail: userEmail,
-                OccurredAt: appointment.CreatedAtUtc), token);
+                OccurredAt: appointment.CreatedAt), token);
             
             await transaction.CommitAsync(token);
             logger.LogInformation("Создано событие: ID={AppointmentId}, Title='{Title}', UserId={UserId}", 

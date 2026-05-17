@@ -12,14 +12,14 @@ public class BookingMappingProfile : Profile
     {
         // Request -> DTO
         CreateMap<CreateBookingRequest, BookingDto>()
-            .ForMember(dest => dest.Id, opt => opt.MapFrom(_ => Guid.NewGuid())) 
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(_ => Guid.NewGuid()));
             //.ForMember(dest => dest.UserId, opt => opt.Ignore()) 
-            .ForMember(dest => dest.CreatedAtUtc, opt => opt.MapFrom(_ => DateTime.UtcNow));
+            //.ForMember(dest => dest.CreatedAtUtc, opt => opt.MapFrom(_ => DateTime.UtcNow));
         
         // DTO - Entity
         CreateMap<BookingDto, BookingModel>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
-            .ForMember(dest => dest.Period, opt => opt.MapFrom(src => new NpgsqlRange<DateTime>(src.StartTimeUtc, src.EndTimeUtc)));
+            .ForMember(dest => dest.Period, opt => opt.MapFrom(src => new NpgsqlRange<DateTime>(src.StartTimeUtc.UtcDateTime, src.EndTimeUtc.UtcDateTime)));
         
         //Entity - DTO
         CreateMap<BookingModel, BookingDto>()

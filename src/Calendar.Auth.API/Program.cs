@@ -88,6 +88,8 @@ builder.Services.AddMassTransit(x =>
     });
 });
 
+builder.Services.AddSingleton(TimeProvider.System);
+
 builder.Services.AddControllers();
 builder.Services.AddAuthorization();
 

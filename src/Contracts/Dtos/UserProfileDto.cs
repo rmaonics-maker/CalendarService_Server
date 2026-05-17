@@ -10,6 +10,6 @@ public sealed record UserProfileDto(
     string? Phone,
     string? AvatarUrl,
     decimal Balance,
-    DateTime CreatedAt,
+    DateTimeOffset CreatedAt,
     DateTime? LastLoginAt
 );

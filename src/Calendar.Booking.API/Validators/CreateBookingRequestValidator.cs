@@ -16,14 +16,14 @@ public class CreateBookingRequestValidator : AbstractValidator<CreateBookingRequ
             .GreaterThan(0).WithMessage("ID комнаты должен быть положительным числом.");
 
         RuleFor(x => x.StartTimeUtc)
-            .NotEmpty().WithMessage("Время начала обязательно.")
-            .Must(BeUtcOrUnspecified).WithMessage("Время начала должно быть в UTC.")
-            .Must(BeInFuture).WithMessage("Время начала должно быть в будущем.");
+            .NotEmpty().WithMessage("Время начала обязательно.");
+            //.Must(BeUtcOrUnspecified).WithMessage("Время начала должно быть в UTC.")
+            //.Must(BeInFuture).WithMessage("Время начала должно быть в будущем.");
 
         RuleFor(x => x.EndTimeUtc)
             .NotEmpty().WithMessage("Время окончания обязательно.")
-            .Must(BeUtcOrUnspecified).WithMessage("Время окончания должно быть в UTC.")
-            .Must(BeInFuture).WithMessage("Время окончания должно быть в будущем.")
+            //.Must(BeUtcOrUnspecified).WithMessage("Время окончания должно быть в UTC.")
+            //.Must(BeInFuture).WithMessage("Время окончания должно быть в будущем.")
             .GreaterThan(x => x.StartTimeUtc).WithMessage("Время окончания должно быть позже времени начала.")
             .Must((request, endTime) => (endTime - request.StartTimeUtc).TotalMinutes >= 15)
             .WithMessage("Минимальная длительность бронирования — 15 минут.");

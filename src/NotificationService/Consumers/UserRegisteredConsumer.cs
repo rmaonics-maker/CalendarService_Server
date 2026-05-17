@@ -9,7 +9,8 @@ namespace NotificationService.Consumers;
 public class UserRegisteredConsumer(
     NotificationDbContext dbContext,
     IEmailService emailService,
-    ILogger<UserRegisteredConsumer> logger) : IConsumer<UserRegisteredEvent>
+    ILogger<UserRegisteredConsumer> logger,
+    TimeProvider timeProvider) : IConsumer<UserRegisteredEvent>
 {
     public async Task Consume(ConsumeContext<UserRegisteredEvent> context)
     {
@@ -26,7 +27,7 @@ public class UserRegisteredConsumer(
         {
             UserId = msg.Id, 
             EmailType = "Welcome", 
-            SentAt = DateTimeOffset.UtcNow 
+            SentAt = timeProvider.GetUtcNow() 
         });
         await dbContext.SaveChangesAsync();
     }

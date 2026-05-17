@@ -109,7 +109,8 @@ public class Program
         options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
         .UseSnakeCaseNamingConvention());
         
-
+        builder.Services.AddSingleton(TimeProvider.System);
+        
         var host = builder.Build();
         host.Run();
     }

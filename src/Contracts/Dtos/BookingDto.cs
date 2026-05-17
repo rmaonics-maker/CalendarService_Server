@@ -10,8 +10,8 @@ public sealed record BookingDto(
     string Title,
     int RoomId,
     //Guid UserId,
-    DateTime StartTimeUtc,
-    DateTime EndTimeUtc,
-    DateTime CreatedAtUtc,
+    DateTimeOffset StartTimeUtc,
+    DateTimeOffset EndTimeUtc,
+    DateTimeOffset CreatedAtUtc,
     Guid? AppointmentId  // Опциональная ссылка на событие
 );

@@ -31,9 +31,13 @@ namespace Calendar.Booking.API.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<DateTime>("CreatedAtUtc")
+                    b.Property<Guid?>("AppointmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("appointment_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at_utc");
+                        .HasColumnName("created_at");
 
                     b.Property<NpgsqlRange<DateTime>>("Period")
                         .HasColumnType("tstzrange")

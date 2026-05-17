@@ -113,6 +113,8 @@ builder.Services.AddDbContext<BookingDbContext>(option => option
 
 builder.Services.AddScoped<IBookingService, PostgresBookingService>();
 
+builder.Services.AddSingleton(TimeProvider.System);
+
 builder.Services.AddOptions<BookingRabbitMqOptions>()
     .Bind(builder.Configuration.GetSection(BookingRabbitMqOptions.SectionName))
     .ValidateOnStart();

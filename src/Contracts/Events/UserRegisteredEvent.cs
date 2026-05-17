@@ -8,5 +8,5 @@ public sealed record UserRegisteredEvent(
     Guid Id,
     string Name,
     string Email,
-    DateTime OccurredAt
+    DateTimeOffset OccurredAt
 );

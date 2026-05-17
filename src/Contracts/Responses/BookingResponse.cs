@@ -8,7 +8,7 @@ public sealed record BookingResponse(
     string Title,
     Guid UserId,
     int RoomId,
-    DateTime StartTimeUtc,
-    DateTime EndTimeUtc,
-    DateTime CreatedAtUtc,
+    DateTimeOffset StartTimeUtc,
+    DateTimeOffset EndTimeUtc,
+    DateTimeOffset CreatedAtUtc,
     Guid? AppointmentId);

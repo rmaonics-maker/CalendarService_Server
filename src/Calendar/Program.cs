@@ -97,8 +97,9 @@ builder.Services.AddOpenTelemetry()
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(option => option
-            .UseNpgsql(connectionString)
-            .UseSnakeCaseNamingConvention());
+            .UseNpgsql(connectionString, n => n.UseNodaTime())
+            .UseSnakeCaseNamingConvention()
+            );
 
 builder.Services.AddScoped<IUserService, PostgresUserService>();
 builder.Services.AddScoped<IAppointmentService, PostgresAppointmentService>();

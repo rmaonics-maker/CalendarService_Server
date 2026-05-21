@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Calendar.Contracts.Types;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using NpgsqlTypes;
 
@@ -9,9 +10,11 @@ public sealed class Appointment
     public Guid Id { get; init; }
     public required string Title { get; init; } 
     public required string Description { get; init; } 
-    public NpgsqlRange<DateTime> Period { get; init; } 
+    public TimeSlot Slot { get; init; } 
     public required string Location { get; init; } 
     public string? RecurrentRule { get; init; }
+    public required string DateTimeZoneId { get; init; }
+    public RecurrencePattern? Recurrence { get; init; }
     public Guid UserId { get; init; }
     public DateTimeOffset CreatedAt { get; set; }
     public uint Version { get; init; }
@@ -34,7 +37,34 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
         builder.Property(e => e.Version).IsRowVersion();
 
         builder.HasIndex(e => e.UserId);
-        
+
+        builder.ComplexProperty(e => e.Slot, slotBuilder =>
+        {
+            slotBuilder.Property(s => s.Start)
+                .HasColumnName("start_at")
+                .IsRequired();
+
+            slotBuilder.Property(s => s.End)
+                .HasColumnName("end_at")
+                .IsRequired();
+        });
+
+        builder.ComplexProperty(e => e.Recurrence, recurrenceBuilder =>
+        {
+            recurrenceBuilder.Property(r => r.RRule)
+                .HasColumnName("recurrent_rule")
+                .HasMaxLength(200);
+
+            recurrenceBuilder.Property(r => r.Until)
+                .HasColumnName("recurrent_until");
+
+            recurrenceBuilder.Property(r => r.Count)
+                .HasColumnName("recurrent_count");
+        });
+
+        builder.Property(e => e.DateTimeZoneId)
+            .HasMaxLength(200)
+            .IsRequired();
 
         builder.HasOne<User>()
             .WithMany()

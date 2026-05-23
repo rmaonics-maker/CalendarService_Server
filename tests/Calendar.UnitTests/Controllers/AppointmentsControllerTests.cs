@@ -25,6 +25,7 @@ public class AppointmentsControllerTests
     private readonly IAppointmentService _service;
     private readonly IMapper _mapper;
     private readonly IValidator<CreateAppointmentRequest> _validator;
+    private readonly IRecurrenceEvaluator _recurrenceEvaluator;
     private readonly IFixture _fixture;
 
     public AppointmentsControllerTests(ITestOutputHelper testOutputHelper)
@@ -33,12 +34,13 @@ public class AppointmentsControllerTests
         _service = Substitute.For<IAppointmentService>();
         _mapper = Substitute.For<IMapper>();
         _validator = Substitute.For<IValidator<CreateAppointmentRequest>>();
+        _recurrenceEvaluator = Substitute.For<IRecurrenceEvaluator>();
         _fixture = new Fixture();
 
         _validator.ValidateAsync(Arg.Any<CreateAppointmentRequest>(), Arg.Any<CancellationToken>())
             .Returns(new FluentValidation.Results.ValidationResult());
         
-        _sut = new AppointmentsController(_service, _mapper, _validator);
+        _sut = new AppointmentsController(_service, _mapper, _validator, _recurrenceEvaluator);
         
         // Setup User Claim
         var userId = Guid.NewGuid().ToString();
@@ -134,7 +136,7 @@ public class AppointmentsControllerTests
         _service.GetAppointmentAsync(id, Arg.Any<CancellationToken>()).Returns((AppointmentDto?)null);
 
         //Act
-        var result = await _sut.GetAppointment(id);
+        var result = await _sut.GetAppointment(id.ToString());
 
         //Assert
         result.Should().BeOfType<NotFoundObjectResult>();
@@ -145,8 +147,9 @@ public class AppointmentsControllerTests
     {
         // Arrange
         var dto = _fixture.Create<AppointmentDto>();
+        dto = dto with { Id = Guid.NewGuid().ToString() }; // Ensure it's a valid Guid string
         var response = _fixture.Create<AppointmentResponse>();
-        _service.GetAppointmentAsync(dto.Id, Arg.Any<CancellationToken>()).Returns(dto);
+        _service.GetAppointmentAsync(Guid.Parse(dto.Id), Arg.Any<CancellationToken>()).Returns(dto);
         _mapper.Map<AppointmentResponse>(dto).Returns(response);
         
         // Act

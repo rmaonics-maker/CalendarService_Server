@@ -8,6 +8,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 {
     public DbSet<User> Users { get; set; }
     public DbSet<Appointment> Appointments { get; set; }
+    public DbSet<AppointmentException> Exceptions { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

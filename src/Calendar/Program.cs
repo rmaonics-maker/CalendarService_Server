@@ -103,6 +103,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(option => option
 
 builder.Services.AddScoped<IUserService, PostgresUserService>();
 builder.Services.AddScoped<IAppointmentService, PostgresAppointmentService>();
+builder.Services.AddScoped<IRecurrenceEvaluator, RecurrenceEvaluator>();
 
 var secretPath = "/run/secrets";
 if(Directory.Exists(secretPath))

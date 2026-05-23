@@ -1,52 +1,75 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using AutoMapper;
 using Calendar_Service.Attributes;
+using Calendar_Service.Models;
 using Calendar_Service.Services;
 using Calendar.Contracts.Dtos;
 using Calendar.Contracts.Requests;
 using Calendar.Contracts.Responses;
+using Calendar.Contracts.Types;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using NodaTime;
 using OpenIddict.Abstractions;
 
 namespace Calendar_Service.Controllers;
 
 [ApiController]
-[Route(("api/v1/events"))]
-public class AppointmentsController(IAppointmentService service, IMapper mapper, 
-    IValidator<CreateAppointmentRequest> validator) : ControllerBase
+[Route("api/v1/events")]
+public class AppointmentsController(
+    IAppointmentService service, 
+    IMapper mapper, 
+    IValidator<CreateAppointmentRequest> validator,
+    IRecurrenceEvaluator recurrenceEvaluator) : ControllerBase
 {
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateAppointment(Guid id, UpdateAppointmentRequest request, CancellationToken token)
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetAppointment(string id, CancellationToken token = default)
     {
-        // UserID из клейма
-        var userIdClaim = User.FindFirst(OpenIddictConstants.Claims.Subject)?.Value 
-                          ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!Guid.TryParse(userIdClaim, out var userId))
+        var parts = id.Split('_');
+        if (!Guid.TryParse(parts[0], out var masterId))
+            return BadRequest("Invalid ID format.");
+
+        var masterDto = await service.GetAppointmentAsync(masterId, token);
+        if (masterDto == null) return NotFound(new ProblemDetails
         {
-            return Unauthorized("Неверный формат ID пользователя в токене.");
-        }
-        // TODO сделать валидацию UpdateAppointmentRequest
-        // проверка существования события и принадлежности пользователю.
-        var appointmentDto = await service.GetAppointmentAsync(id, token);
-        if (appointmentDto is null)
+            Title = "Event not found",
+            Detail = $"Event with id {masterId} not exist.",
+            Status = StatusCodes.Status404NotFound
+        });
+
+        if (parts.Length == 1)
+            return Ok(mapper.Map<AppointmentResponse>(masterDto));
+
+        // Если это виртуальный ID, разворачиваем и ищем конкретное вхождение
+        var master = mapper.Map<Appointment>(masterDto);
+        var exceptions = await service.GetExceptionsAsync(masterId, token);
+        
+        // Для поиска одного вхождения используем широкий диапазон
+        var occurrences = recurrenceEvaluator.GetOccurrences(master, exceptions, new TimeSlot(Instant.MinValue, Instant.MaxValue));
+        
+        var occurrence = occurrences.Events.FirstOrDefault(e => e.Id == id);
+        if (occurrence == null) return NotFound(new ProblemDetails
         {
-            return NotFound($"Event with id {id} not found");
-        }
-// TODO переделать Forbid
-        if (appointmentDto.UserId != userId) 
-            return Forbid("У вас нет прав для редактирования этого события.");
-        
-        // обновление события
-        var updatedAppointmentDto = mapper.Map<AppointmentDto>(request);
-        var success = await service.UpdateAppointmentAsync(id, updatedAppointmentDto, token);
-        
-        if(success is null)
-            return NotFound($"Event with id {id} not found");
-        
-        return CreatedAtAction(nameof(GetAppointment), new {id = success.Id}, mapper.Map<AppointmentResponse>(success));
+            Title = "Occurrence not found",
+            Detail = $"Occurrence with id {id} not found in series.",
+            Status = StatusCodes.Status404NotFound
+        });
+
+        return Ok(mapper.Map<AppointmentResponse>(occurrence));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAppointments(
+        [FromQuery] DateTimeOffset from, 
+        [FromQuery] DateTimeOffset to, CancellationToken token = default)
+    {
+        if ((to - from).TotalDays > 365)
+            return BadRequest("Range too wide. Max 1 year.");
+
+        var results = await service.GetAppointmentsAsync(from, to, token);
+        return Ok(mapper.Map<IEnumerable<AppointmentResponse>>(results));
     }
 
     [HttpPost]
@@ -54,32 +77,25 @@ public class AppointmentsController(IAppointmentService service, IMapper mapper,
     [Authorize]
     public async Task<IActionResult> CreateAppointment(CreateAppointmentRequest request, CancellationToken token = default)
     {
-        // UserID из клейма
         var userIdClaim = User.FindFirst(OpenIddictConstants.Claims.Subject)?.Value 
                           ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!Guid.TryParse(userIdClaim, out var userId))
-        {
             return Unauthorized("Неверный формат ID пользователя в токене.");
-        }
         
-        //  Валидация
         var validationResult = await validator.ValidateAsync(request, token);
         if (!validationResult.IsValid)
             return ValidationProblem(new ValidationProblemDetails(validationResult.ToDictionary()));
         
-        // Dto -> Entity
         var entity = mapper.Map<AppointmentDto>(request);
-        entity = entity with {UserId = userId};
+        entity = entity with { UserId = userId };
 
         try
         {
             var responseDto = await service.CreateAppointmentAsync(entity, token);
-
-            return CreatedAtAction(nameof(GetAppointment), new {id = responseDto.Id}, mapper.Map<AppointmentResponse>(entity));
+            return CreatedAtAction(nameof(GetAppointment), new { id = responseDto.Id }, mapper.Map<AppointmentResponse>(responseDto));
         }
         catch(InvalidOperationException ex)
         {
-            // ПЕРЕХВАТ КОНФЛИКТА
             return Conflict(new { message = ex.Message });
         }
         catch (DbUpdateException ex)
@@ -88,43 +104,33 @@ public class AppointmentsController(IAppointmentService service, IMapper mapper,
         }
     }
 
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetAppointment(Guid id, CancellationToken token = default)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateAppointment(Guid id, UpdateAppointmentRequest request, CancellationToken token)
     {
-        var evt = await service.GetAppointmentAsync(id, token);
-        if (evt == null) return NotFound(new ProblemDetails
-        {
-            Title = "Event not found",
-            Detail = $"Event with id {id} not exist.",
-            Status = StatusCodes.Status404NotFound
-        });
-        
-        return Ok(mapper.Map<AppointmentResponse>(evt));
-    }
-    
-    [HttpGet]
-    public async Task<IActionResult> GetAppointments(
-        [FromQuery] DateTimeOffset from, 
-        [FromQuery] DateTimeOffset to, CancellationToken token = default)
-    {
-        // Валидация
-        if ((to - from).TotalDays > 365)
-            return BadRequest("Range too wide. Max 1 year.");
+        var userIdClaim = User.FindFirst(OpenIddictConstants.Claims.Subject)?.Value 
+                          ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized("Неверный формат ID пользователя в токене.");
 
-        var events = await service.GetAppointmentsAsync(from, to, token);
+        var current = await service.GetAppointmentAsync(id, token);
+        if (current == null) return NotFound($"Event with id {id} not found");
+
+        if (current.UserId != userId) 
+            return Forbid();
         
-        return Ok(mapper.Map<IEnumerable<AppointmentResponse>>(events));
+        var updatedDto = mapper.Map<AppointmentDto>(request);
+        var result = await service.UpdateAppointmentAsync(id, updatedDto, token);
+        
+        if (result is null) return NotFound($"Event with id {id} not found");
+        
+        return CreatedAtAction(nameof(GetAppointment), new { id = result.Id }, mapper.Map<AppointmentResponse>(result));
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteAppointment(Guid id, CancellationToken token)
     {
         var isDeleted = await service.DeleteAppointmentAsync(id, token);
-
-        if (!isDeleted)
-        {
-            return NotFound($"Event with id {id} not found.");
-        }
+        if (!isDeleted) return NotFound($"Event with id {id} not found.");
         
         return NoContent();
     }

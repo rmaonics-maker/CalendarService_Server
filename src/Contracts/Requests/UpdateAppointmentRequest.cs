@@ -1,4 +1,7 @@
-﻿namespace Calendar.Contracts.Requests;
+﻿using Calendar.Contracts.Types;
+using NodaTime;
+
+namespace Calendar.Contracts.Requests;
 /// <summary>
 /// Запрос на обновление личного события
 /// Используется в: Calendar API
@@ -6,4 +9,6 @@
 public sealed record UpdateAppointmentRequest(
     string Title,
     string Description,
-    TimeSpan Duration);
+    TimeSpan Duration,
+    UpdateType UpdateType,
+    Instant OriginalStartTime);

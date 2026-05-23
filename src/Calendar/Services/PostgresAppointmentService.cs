@@ -4,8 +4,10 @@ using Calendar_Service.Data;
 using Calendar_Service.Models;
 using Calendar.Contracts.Dtos;
 using Calendar.Contracts.Events;
+using Calendar.Contracts.Types;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using NodaTime;
 
 namespace Calendar_Service.Services;
 
@@ -14,7 +16,8 @@ public class PostgresAppointmentService(
     IPublishEndpoint publishEndpoint,
     IMapper mapper,
     ILogger<PostgresAppointmentService> logger,
-    TimeProvider timeProvider) : IAppointmentService
+    TimeProvider timeProvider,
+    IRecurrenceEvaluator recurrenceEvaluator) : IAppointmentService
 {
     public async Task<AppointmentDto> CreateAppointmentAsync(AppointmentDto evt, CancellationToken token = default)
     {
@@ -53,21 +56,45 @@ public class PostgresAppointmentService(
 
     public async Task<AppointmentDto?> GetAppointmentAsync(Guid id, CancellationToken token = default)
     {
-        var appointment = await context.Appointments.FirstOrDefaultAsync(a => a.Id == id, token);
-        //logger.LogInformation("Прочитано событие: ID={{AppointmentId}}, Title='{Title}', UserId={UserId}", appointment.Id, appointment.Title, appointment.UserId);
+        var appointment = await context.Appointments.FindAsync(new object[] { id }, token);
         return appointment is null ? null : mapper.Map<AppointmentDto>(appointment);
     }
 
     public async Task<IEnumerable<AppointmentDto>> GetAppointmentsAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken token = default)
     {
-        var bookings = context.Appointments
+        var fromInstant = Instant.FromDateTimeOffset(from);
+        var toInstant = Instant.FromDateTimeOffset(to);
+
+        // 1. Загружаем всех "мастеров", которые могут иметь вхождения в этом диапазоне
+        var masters = await context.Appointments
             .AsNoTracking()
-            .Where(b => b.Period.LowerBound == from.Date && b.Period.UpperBound == from.Date)
-            .OrderBy(b => b.Period.LowerBound)
-            .ProjectTo<AppointmentDto>(mapper.ConfigurationProvider)
+            .Where(a => a.Slot.Start <= toInstant && 
+                        (a.Recurrence == null || a.Recurrence.Until == null || a.Recurrence.Until >= fromInstant))
             .ToListAsync(token);
-        
-        return mapper.Map<IEnumerable<AppointmentDto>>(bookings);
+
+        var masterIds = masters.Select(m => m.Id).ToList();
+
+        // 2. Загружаем все исключения для этих мастеров
+        var exceptions = await context.Exceptions
+            .AsNoTracking()
+            .Where(e => masterIds.Contains(e.MasterAppointmentId))
+            .ToListAsync(token);
+
+        var exceptionMap = exceptions.GroupBy(e => e.MasterAppointmentId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var range = new TimeSlot(fromInstant, toInstant);
+        var allOccurrences = new List<AppointmentDto>();
+
+        // 3. Разворачиваем каждого мастера
+        foreach (var master in masters)
+        {
+            var masterExceptions = exceptionMap.TryGetValue(master.Id, out var ex) ? ex : new List<AppointmentException>();
+            var expanded = recurrenceEvaluator.GetOccurrences(master, masterExceptions, range);
+            allOccurrences.AddRange(expanded.Events);
+        }
+
+        return allOccurrences.OrderBy(o => o.StartTime);
     }
     
 
@@ -87,7 +114,7 @@ public class PostgresAppointmentService(
             await publishEndpoint.Publish(new AppointmentUpdatedEvent(
                 AppointmentId: appointment.Id,
                 NewTitle: appointment.Title,
-                OccurredAt: appointment.Period.LowerBound), token);
+                OccurredAt: appointment.Slot.Start.ToDateTimeUtc()), token);
                 
             logger.LogInformation("Обновлено событие: ID={AppointmentId}, Title='{Title}', UserId={UserId}",
                 appointment.Id, appointment.Title, appointment.UserId);
@@ -118,7 +145,7 @@ public class PostgresAppointmentService(
             await publishEndpoint.Publish(new AppointmentDeletedEvent(
                 AppointmentId: appointment.Id,
                 UserId: appointment.UserId,
-                OccurredAt: appointment.Period.LowerBound), token);
+                OccurredAt: appointment.Slot.Start.ToDateTimeUtc()), token);
 
             await transaction.CommitAsync(token);
             
@@ -132,5 +159,13 @@ public class PostgresAppointmentService(
             logger.LogError(e, "Ошибка при удалении события {AppointmentId}", id);
             throw;
         }
+    }
+
+    public async Task<List<AppointmentException>> GetExceptionsAsync(Guid masterId, CancellationToken token = default)
+    {
+        return await context.Exceptions
+            .AsNoTracking()
+            .Where(e => e.MasterAppointmentId == masterId)
+            .ToListAsync(token);
     }
 }

@@ -1,7 +1,6 @@
 ﻿using Calendar.Contracts.Types;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using NpgsqlTypes;
 
 namespace Calendar_Service.Models;
 
@@ -12,7 +11,6 @@ public sealed class Appointment
     public required string Description { get; init; } 
     public TimeSlot Slot { get; init; } 
     public required string Location { get; init; } 
-    public string? RecurrentRule { get; init; }
     public required string DateTimeZoneId { get; init; }
     public RecurrencePattern? Recurrence { get; init; }
     public Guid UserId { get; init; }
@@ -31,7 +29,6 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
         builder.Property(e => e.Description).IsRequired().HasMaxLength(1000);
         
         builder.Property(e => e.Location).HasMaxLength(200).IsRequired();
-        builder.Property(e => e.RecurrentRule).HasMaxLength(200);
         builder.Property(e => e.UserId).IsRequired();
         builder.Property(e => e.CreatedAt).IsRequired();
         builder.Property(e => e.Version).IsRowVersion();

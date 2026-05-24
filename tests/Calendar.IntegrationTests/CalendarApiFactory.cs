@@ -45,7 +45,7 @@ namespace Calendar.IntegrationTests
             
             // Применяем миграции к тестовой базе данных
             var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-            optionsBuilder.UseNpgsql(_dbContainer.GetConnectionString())
+            optionsBuilder.UseNpgsql(_dbContainer.GetConnectionString(), n => n.UseNodaTime())
                 .UseSnakeCaseNamingConvention();
             
             await using var context = new ApplicationDbContext(optionsBuilder.Options);
@@ -59,7 +59,7 @@ namespace Calendar.IntegrationTests
                 services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
                 services.AddDbContext<ApplicationDbContext>(options =>
                 {
-                    options.UseNpgsql(_dbContainer.GetConnectionString())
+                    options.UseNpgsql(_dbContainer.GetConnectionString(), n => n.UseNodaTime())
                         .UseSnakeCaseNamingConvention();
                 });
 

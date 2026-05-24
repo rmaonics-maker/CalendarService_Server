@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using Calendar_Service.Data;
 using Calendar_Service.Models;
 using Calendar.Contracts.Dtos;
@@ -33,22 +32,23 @@ public class PostgresAppointmentService(
             var userEmail = await context.Users
                 .Where(u => u.Id == appointment.UserId)
                 .Select(u => u.Email).FirstOrDefaultAsync(token);
-            
+
+            await transaction.CommitAsync(token);
+
             await publishEndpoint.Publish(new AppointmentCreatedEvent(
                 AppointmentId: appointment.Id,
                 Title: appointment.Title,
                 UserId: appointment.UserId,
                 UserEmail: userEmail,
                 OccurredAt: appointment.CreatedAt), token);
-            
-            await transaction.CommitAsync(token);
-            logger.LogInformation("Создано событие: ID={AppointmentId}, Title='{Title}', UserId={UserId}", 
+
+            logger.LogInformation("Создано событие: ID={AppointmentId}, Title='{Title}', UserId={UserId}",
                 appointment.Id, appointment.Title, appointment.UserId);
             return mapper.Map<AppointmentDto>(appointment);
         }
         catch (Exception e)
         {
-            await transaction.RollbackAsync(token);
+            try { await transaction.RollbackAsync(token); } catch { }
             logger.LogError(e, "Ошибка при создании события {AppointmentId}.", evt.Id);
             throw;
         }
@@ -56,11 +56,14 @@ public class PostgresAppointmentService(
 
     public async Task<AppointmentDto?> GetAppointmentAsync(Guid id, CancellationToken token = default)
     {
-        var appointment = await context.Appointments.FindAsync(new object[] { id }, token);
+        var appointment = await context.Appointments.FindAsync([id], token);
         return appointment is null ? null : mapper.Map<AppointmentDto>(appointment);
     }
 
-    public async Task<IEnumerable<AppointmentDto>> GetAppointmentsAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken token = default)
+    public async Task<IEnumerable<AppointmentDto>> GetAppointmentsAsync(
+        DateTimeOffset from, 
+        DateTimeOffset to, 
+        CancellationToken token = default)
     {
         var fromInstant = Instant.FromDateTimeOffset(from);
         var toInstant = Instant.FromDateTimeOffset(to);
@@ -123,7 +126,7 @@ public class PostgresAppointmentService(
         }
         catch (Exception e)
         {
-            await transaction.RollbackAsync(token);
+            try { await transaction.RollbackAsync(token); } catch { }
             logger.LogError(e, "Ошибка при обновлении события {AppointmentId}", id);
             throw;
         }
@@ -136,26 +139,26 @@ public class PostgresAppointmentService(
         try
         {
             var appointment = await context.Appointments.FirstOrDefaultAsync(a => a.Id == id, token);
-            
+
             if(appointment is null) return false;
 
             context.Appointments.Remove(appointment);
             await context.SaveChangesAsync(token);
-            
+
+            await transaction.CommitAsync(token);
+
             await publishEndpoint.Publish(new AppointmentDeletedEvent(
                 AppointmentId: appointment.Id,
                 UserId: appointment.UserId,
                 OccurredAt: appointment.Slot.Start.ToDateTimeUtc()), token);
 
-            await transaction.CommitAsync(token);
-            
             logger.LogInformation("Удалено событие: ID={AppointmentId}", id);
-            
+
             return true;
         }
         catch (Exception e)
         {
-            await transaction.RollbackAsync(token);
+            try { await transaction.RollbackAsync(token); } catch { }
             logger.LogError(e, "Ошибка при удалении события {AppointmentId}", id);
             throw;
         }

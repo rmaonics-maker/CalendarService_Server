@@ -1,10 +1,8 @@
 using System.Net.Http.Json;
-using Calendar.Contracts.Dtos;
 using Calendar.Contracts.Events;
 using Calendar.Contracts.Requests;
 using FluentAssertions;
 using MassTransit.Testing;
-using Microsoft.EntityFrameworkCore;
 
 namespace Calendar.IntegrationTests
 {
@@ -48,7 +46,7 @@ namespace Calendar.IntegrationTests
             appointmentInDb!.Title.Should().Be(createAppointmentRequest.Title, "Заголовок должен соответствовать запросу");
             
             // Проверяем, что период был создан (не пустой)
-            appointmentInDb.Period.Should().NotBeNull("Период должен быть заполнен");
+            appointmentInDb.Slot.Should().NotBeNull("Период должен быть заполнен");
             
             // Assert - MassTransit Message Bus
             // Проверяем, что сообщение было опубликовано в шине

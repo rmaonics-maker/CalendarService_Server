@@ -6,6 +6,7 @@ using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -105,16 +106,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             }
         };
     });
-
+//DB
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<BookingDbContext>(option => option
             .UseNpgsql(connectionString)
             .UseSnakeCaseNamingConvention());
-
+// Service
 builder.Services.AddScoped<IBookingService, PostgresBookingService>();
+builder.Services.AddSingleton<IDistributedLockService, RedisDistributedLockService>();
 
+// Redis
+var redisConnectionString = builder.Configuration.GetConnectionString("Redis")
+    ?? $"localhost:{builder.Configuration["Redis:Port"] ?? "6379"}";
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisConnectionString;
+});
+builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnectionString));
+builder.Services.Configure<DistributedLockOptions>(
+    builder.Configuration.GetSection(DistributedLockOptions.SectionName));
+// Time Provider
 builder.Services.AddSingleton(TimeProvider.System);
-
+//Rabbit
 builder.Services.AddOptions<BookingRabbitMqOptions>()
     .Bind(builder.Configuration.GetSection(BookingRabbitMqOptions.SectionName))
     .ValidateOnStart();

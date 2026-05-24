@@ -15,7 +15,8 @@ public class PostgresBookingService(
     IPublishEndpoint publishEndpoint,
     ILogger<PostgresBookingService> logger,
     IMapper mapper,
-    TimeProvider timeProvider) : IBookingService
+    TimeProvider timeProvider,
+    IDistributedLockService lockService) : IBookingService
 {
     public async Task<IEnumerable<BookingDto>> GetBookingsAsync(Guid userId, CancellationToken token = default)
     {
@@ -39,6 +40,12 @@ public class PostgresBookingService(
 
     public async Task<BookingDto> CreateBookingAsync(Guid userId, BookingDto bookingDto, CancellationToken token = default)
     {
+        var lockKey = $"lock:room:{bookingDto.RoomId}:{bookingDto.StartTimeUtc:yyyy-MM-dd}";
+        await using var @lock = await lockService.AcquireAsync(lockKey, token);
+        if (@lock is null)
+            throw new InvalidOperationException(
+                $"Не удалось получить блокировку для комнаты {bookingDto.RoomId}. Попробуйте позже.");
+        
         await using var transaction = await context.Database.BeginTransactionAsync(token);
 
         try
@@ -81,6 +88,12 @@ public class PostgresBookingService(
 
     public async Task<BookingDto?> UpdateBookingAsync(Guid id, BookingDto bookingDto, CancellationToken token = default)
     {
+        var lockKey = $"lock:room:{bookingDto.RoomId}:{bookingDto.StartTimeUtc:yyyy-MM-dd}";
+        await using var @lock = await lockService.AcquireAsync(lockKey, token);
+        if (@lock is null)
+            throw new InvalidOperationException(
+                $"Не удалось получить блокировку для комнаты {bookingDto.RoomId} при обновлении.");
+        
         await using var transaction = await context.Database.BeginTransactionAsync(token);
 
         try

@@ -10,6 +10,14 @@ using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
+//DB
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+builder.Services.AddDbContext<BookingDbContext>(option => option
+            .UseNpgsql(connectionString)
+            .UseSnakeCaseNamingConvention());
+
 builder.Services.AddControllers();
 
 builder.Services.AddHealthChecks();
@@ -106,11 +114,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             }
         };
     });
-//DB
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<BookingDbContext>(option => option
-            .UseNpgsql(connectionString)
-            .UseSnakeCaseNamingConvention());
+
 // Service
 builder.Services.AddScoped<IBookingService, PostgresBookingService>();
 builder.Services.AddSingleton<IDistributedLockService, RedisDistributedLockService>();
@@ -122,7 +126,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = redisConnectionString;
 });
-builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnectionString));
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConnectionString));
 builder.Services.Configure<DistributedLockOptions>(
     builder.Configuration.GetSection(DistributedLockOptions.SectionName));
 // Time Provider

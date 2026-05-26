@@ -5,7 +5,7 @@ namespace Calendar.Booking.API.Models;
 
 public sealed class IdempotencyKeyModel
 {
-    public string Key { get; init; } = null!;
+    public string Key { get; init; } = null;
     public int StatusCode { get; init; }
     public string? ResponseBody { get; init; }
     public DateTimeOffset CreatedAt { get; init; }

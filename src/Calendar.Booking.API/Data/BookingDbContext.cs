@@ -8,6 +8,7 @@ public class BookingDbContext(DbContextOptions<BookingDbContext> options) : DbCo
 {
     public DbSet<Models.BookingModel> Bookings { get; set; }
     public DbSet<RoomModel> Rooms { get; set; }
+    public DbSet<IdempotencyKeyModel> IdempotencyKeys { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

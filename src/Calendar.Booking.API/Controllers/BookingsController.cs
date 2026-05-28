@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using AutoMapper;
+using Calendar.Booking.API.Attributes;
 using Calendar.Booking.API.Services;
 using Calendar.Contracts.Dtos;
 using Calendar.Contracts.Requests;
@@ -57,6 +58,7 @@ public class BookingsController(IBookingService service, IMapper mapper) : Contr
     }
 
     [HttpPost]
+    [Idempotent]
     public async Task<IActionResult> CreateBooking([FromBody] CreateBookingRequest request, CancellationToken token = default)
     {
         var userId = GetUserIdFromClaims();

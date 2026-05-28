@@ -70,7 +70,7 @@ public class PostgresBookingService(
             ), token);
 
             await transaction.CommitAsync(token);
-
+            
             logger.LogInformation(
                 "Создано бронирование: ID={BookingId}, Title='{Title}', UserId={UserId}, RoomId={RoomId}",
                 bookingModel.Id, bookingModel.Title, bookingModel.UserId, bookingModel.RoomId);

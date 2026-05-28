@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace Calendar.Booking.API.Attributes;
 
-public class IdempotentAAttribute : Attribute, IAsyncActionFilter
+public class IdempotentAttribute : Attribute, IAsyncActionFilter
 {
     private const string IdempotencyKeyHeader = "Idempotency-Key";
     

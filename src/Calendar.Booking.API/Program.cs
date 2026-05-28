@@ -118,6 +118,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // Service
 builder.Services.AddScoped<IBookingService, PostgresBookingService>();
 builder.Services.AddSingleton<IDistributedLockService, RedisDistributedLockService>();
+builder.Services.AddHostedService<IdempotencyCleanupService>();
 
 // Redis
 var redisConnectionString = builder.Configuration.GetConnectionString("Redis")

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Calendar.Booking.API.Data;
@@ -40,6 +41,12 @@ public class PostgresBookingService(
 
     public async Task<BookingDto> CreateBookingAsync(Guid userId, BookingDto bookingDto, CancellationToken token = default)
     {
+        using var activity = Telemetry.ActivitySource.StartActivity("booking.create");
+        activity?.SetTag("booking.user_id", userId);
+        activity?.SetTag("booking.room_id", bookingDto.RoomId);
+        
+        var sw = Stopwatch.StartNew();
+        
         var lockKey = $"lock:room:{bookingDto.RoomId}:{bookingDto.StartTimeUtc:yyyy-MM-dd}";
         await using var @lock = await lockService.AcquireAsync(lockKey, token);
         if (@lock is null)
@@ -70,6 +77,9 @@ public class PostgresBookingService(
             ), token);
 
             await transaction.CommitAsync(token);
+            
+            sw.Stop();
+            Telemetry.BookingCreationDuration.Record(sw.Elapsed.TotalMilliseconds);
             
             logger.LogInformation(
                 "Создано бронирование: ID={BookingId}, Title='{Title}', UserId={UserId}, RoomId={RoomId}",

@@ -3,9 +3,13 @@ using Calendar.Booking.API.Options;
 using Calendar.Booking.API.Services;
 using FluentValidation;
 using MassTransit;
+using MassTransit.Monitoring;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -115,10 +119,30 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+builder.Services.Configure<CacheOptions>(builder.Configuration.GetSection(CacheOptions.SectionName));
+
 // Service
-builder.Services.AddScoped<IBookingService, PostgresBookingService>();
+builder.Services.AddScoped<PostgresBookingService>();
+builder.Services.Decorate<IBookingService, CachedBookingService>();
 builder.Services.AddSingleton<IDistributedLockService, RedisDistributedLockService>();
 builder.Services.AddHostedService<IdempotencyCleanupService>();
+
+builder.Services.AddOpenTelemetry()
+    .WithTracing(providerBuilder =>
+    {
+        providerBuilder
+            .SetResourceBuilder(ResourceBuilder.CreateDefault()
+                .AddService("Calendar.Booking.Api"))
+            .AddSource("MassTransit")
+            .AddSource("Calendar.Booking.Api")
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddConsoleExporter()
+            .AddOtlpExporter();
+    })
+    .WithMetrics(providerBuilder => providerBuilder
+        .AddMeter(InstrumentationOptions.MeterName)
+        .AddAspNetCoreInstrumentation());
 
 // Redis
 var redisConnectionString = builder.Configuration.GetConnectionString("Redis")
@@ -128,8 +152,10 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.Configuration = redisConnectionString;
 });
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConnectionString));
+
 builder.Services.Configure<DistributedLockOptions>(
     builder.Configuration.GetSection(DistributedLockOptions.SectionName));
+
 // Time Provider
 builder.Services.AddSingleton(TimeProvider.System);
 //Rabbit

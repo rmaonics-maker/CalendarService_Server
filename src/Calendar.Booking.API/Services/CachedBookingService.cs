@@ -12,6 +12,8 @@ public sealed class CachedBookingService(
     IOptions<CacheOptions> options,
     ILogger<CachedBookingService> logger) : IBookingService
 {
+    private record BookingCacheEntry(Guid UserId, BookingDto Booking);
+    
     public async Task<IEnumerable<BookingDto>> GetBookingsAsync(Guid userId, CancellationToken token = default)
     {
         var cacheKey = $"bookings:user:{userId}";
@@ -22,24 +24,26 @@ public sealed class CachedBookingService(
     {
         var cacheKey = $"booking:{id}";
         var cached = await cache.GetStringAsync(cacheKey, token);
-        if (cached is not null)
+        if (!string.IsNullOrEmpty(cached))
         {
-            var dto = JsonSerializer.Deserialize<BookingDto>(cached);
-            return (dto?.UserId, dto);
+            var entry = JsonSerializer.Deserialize<BookingCacheEntry>(cached);
+            logger.LogDebug("Cache HIT: {Key}", cacheKey);
+            return (entry?.UserId, entry?.Booking);
         }
 
-        var result = await inner.GetBookingAsync(id, token);
+        var (userId, booking) = await inner.GetBookingAsync(id, token);
 
-        if (result.Item2 is not null)
+        if (userId.HasValue && booking is not null)
         {
-            await SetWithJitterAsync(cacheKey, JsonSerializer.Serialize(result.Item2), token);
+            var entryToCache = new BookingCacheEntry(userId.Value, booking);
+            var serialized = JsonSerializer.Serialize(entryToCache);
+            await SetWithJitterAsync(cacheKey, serialized, token);
+            logger.LogDebug("Cache MISS: {Key}", cacheKey);
         }
         
-        return result;
+        return (userId, booking);
     }
-
     
-
     public async Task<BookingDto> CreateBookingAsync(Guid userId, BookingDto bookingDto, CancellationToken token = default)
     {
         var result = await inner.CreateBookingAsync(userId, bookingDto, token);
@@ -54,7 +58,7 @@ public sealed class CachedBookingService(
         if (result && booking is not null)
         {
             await cache.RemoveAsync($"booking:{id}", token);
-            await cache.RemoveAsync($"booking:user:{booking.UserId}", token);
+            //await cache.RemoveAsync($"booking:user:{booking.UserId}", token);
         }
         return result;
     }
@@ -65,7 +69,7 @@ public sealed class CachedBookingService(
         if (result is not null)
         {
             await cache.RemoveAsync($"booking:{id}", token);
-            await cache.RemoveAsync($"booking:user:{booking.UserId}", token);
+            //await cache.RemoveAsync($"booking:user:{booking.UserId}", token);
         }
         return result;
     }
@@ -80,7 +84,7 @@ public sealed class CachedBookingService(
             return JsonSerializer.Deserialize<List<BookingDto>>(cached) ?? [];
         }
         logger.LogDebug("Cache MISS: {Key}", key);
-        var result = await factory();
+        var result = (await factory()).ToArray();
         await SetWithJitterAsync(key, JsonSerializer.Serialize(result), token);
         return result;
     }

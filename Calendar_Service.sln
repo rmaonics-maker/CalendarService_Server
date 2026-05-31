@@ -25,6 +25,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Calendar.Auth.API", "src\Ca
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Calendar.Booking.API", "src\Calendar.Booking.API\Calendar.Booking.API.csproj", "{B44720BA-CE6A-41BB-9F3D-19800D2D2F36}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Booking.UnitTests", "tests\Booking.UnitTests\Booking.UnitTests.csproj", "{D8D0F8A6-69DF-4358-9586-6F9C5E8A3741}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -134,6 +136,18 @@ Global
 		{B44720BA-CE6A-41BB-9F3D-19800D2D2F36}.Release|x64.Build.0 = Release|Any CPU
 		{B44720BA-CE6A-41BB-9F3D-19800D2D2F36}.Release|x86.ActiveCfg = Release|Any CPU
 		{B44720BA-CE6A-41BB-9F3D-19800D2D2F36}.Release|x86.Build.0 = Release|Any CPU
+		{D8D0F8A6-69DF-4358-9586-6F9C5E8A3741}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8D0F8A6-69DF-4358-9586-6F9C5E8A3741}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8D0F8A6-69DF-4358-9586-6F9C5E8A3741}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D8D0F8A6-69DF-4358-9586-6F9C5E8A3741}.Debug|x64.Build.0 = Debug|Any CPU
+		{D8D0F8A6-69DF-4358-9586-6F9C5E8A3741}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D8D0F8A6-69DF-4358-9586-6F9C5E8A3741}.Debug|x86.Build.0 = Debug|Any CPU
+		{D8D0F8A6-69DF-4358-9586-6F9C5E8A3741}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8D0F8A6-69DF-4358-9586-6F9C5E8A3741}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D8D0F8A6-69DF-4358-9586-6F9C5E8A3741}.Release|x64.ActiveCfg = Release|Any CPU
+		{D8D0F8A6-69DF-4358-9586-6F9C5E8A3741}.Release|x64.Build.0 = Release|Any CPU
+		{D8D0F8A6-69DF-4358-9586-6F9C5E8A3741}.Release|x86.ActiveCfg = Release|Any CPU
+		{D8D0F8A6-69DF-4358-9586-6F9C5E8A3741}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -148,6 +162,7 @@ Global
 		{7B8E43F3-55A5-4838-AF42-5E3EF1B8F6AE} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{622E156C-1D80-4620-B0C3-8BD9053234C6} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{B44720BA-CE6A-41BB-9F3D-19800D2D2F36} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{D8D0F8A6-69DF-4358-9586-6F9C5E8A3741} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7EB63C76-D728-405A-B34F-89EB8FEF7A76}

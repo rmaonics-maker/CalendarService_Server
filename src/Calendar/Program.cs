@@ -138,6 +138,13 @@ builder.Services.AddSingleton(TimeProvider.System);
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    await context.Database.MigrateAsync();
+}
+
 
 // 2. MIDDLEWARE PIPELINE (Конвейер запроса)
 app.UseHealthChecks("/health");
@@ -157,3 +164,5 @@ app.MapControllers();
 app.Run();
 
 public partial class Program { }
+public class CalendarApiAnchor { } 
+ 

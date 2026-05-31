@@ -17,7 +17,7 @@ FROM build AS publish
 RUN dotnet publish "Calendar.Auth.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # 2. Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble AS final
 WORKDIR /app
 USER app
 

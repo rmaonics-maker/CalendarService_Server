@@ -122,8 +122,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.Configure<CacheOptions>(builder.Configuration.GetSection(CacheOptions.SectionName));
 
 // Service
-builder.Services.AddScoped<PostgresBookingService>();
+builder.Services.AddScoped<IBookingService, PostgresBookingService>();
 builder.Services.Decorate<IBookingService, CachedBookingService>();
+
 builder.Services.AddSingleton<IDistributedLockService, RedisDistributedLockService>();
 builder.Services.AddHostedService<IdempotencyCleanupService>();
 
@@ -165,6 +166,13 @@ builder.Services.AddOptions<BookingRabbitMqOptions>()
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<BookingDbContext>();
+    await context.Database.MigrateAsync();
+}
+
 app.UseHealthChecks("/health");
 
 // Configure the HTTP request pipeline.
@@ -181,3 +189,5 @@ app.MapControllers();
 app.Run();
 
 public partial class Program { } 
+public class BookingApiAnchor { } 
+ 

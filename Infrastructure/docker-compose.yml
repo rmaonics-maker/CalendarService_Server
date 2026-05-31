@@ -1,7 +1,7 @@
 services:
   calendar-db:
     image: postgres:15
-    container_name: calendar-db-1
+    container_name: ${CALENDAR_DB_HOST}
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -96,14 +96,47 @@ services:
     image: redis:7-alpine
     container_name: redis
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT}:6379"
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
     networks:
-      - calendar-network
+      - calendar-net
+
+  calendar-booking-api:
+    build:
+      context: ..
+      dockerfile: src/Calendar.Booking.API/Dockerfile
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    container_name: calendar-booking-api-1
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=${BOOKING_DB_HOST};Port=5432;Database=${BOOKING_DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
+      ConnectionStrings__Redis: "redis:6379"
+      RabbitMq__Host: ${RABBIT_HOST}
+      RabbitMq__Username: ${RABBIT_USER}
+      RabbitMq__Password: ${RABBIT_PASS}
+    depends_on:
+      booking-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - calendar-net
+    restart: on-failure
+    ports:
+      - "8082:8080"
+
 
   calendar-api:
     build:

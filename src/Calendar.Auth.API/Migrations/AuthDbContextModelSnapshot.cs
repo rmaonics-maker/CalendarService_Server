@@ -93,13 +93,13 @@ namespace Calendar.Auth.API.Migrations
                         .HasName("pk_asp_net_users");
 
                     b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
+                        .HasDatabaseName("email_index");
 
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
-                        .HasDatabaseName("UserNameIndex");
+                        .HasDatabaseName("user_name_index");
 
-                    b.ToTable("AspNetUsers", (string)null);
+                    b.ToTable("asp_net_users", (string)null);
                 });
 
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.InboxState", b =>
@@ -346,9 +346,9 @@ namespace Calendar.Auth.API.Migrations
 
                     b.HasIndex("NormalizedName")
                         .IsUnique()
-                        .HasDatabaseName("RoleNameIndex");
+                        .HasDatabaseName("role_name_index");
 
-                    b.ToTable("AspNetRoles", (string)null);
+                    b.ToTable("asp_net_roles", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -379,7 +379,7 @@ namespace Calendar.Auth.API.Migrations
                     b.HasIndex("RoleId")
                         .HasDatabaseName("ix_asp_net_role_claims_role_id");
 
-                    b.ToTable("AspNetRoleClaims", (string)null);
+                    b.ToTable("asp_net_role_claims", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
@@ -410,7 +410,7 @@ namespace Calendar.Auth.API.Migrations
                     b.HasIndex("UserId")
                         .HasDatabaseName("ix_asp_net_user_claims_user_id");
 
-                    b.ToTable("AspNetUserClaims", (string)null);
+                    b.ToTable("asp_net_user_claims", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
@@ -438,7 +438,7 @@ namespace Calendar.Auth.API.Migrations
                     b.HasIndex("UserId")
                         .HasDatabaseName("ix_asp_net_user_logins_user_id");
 
-                    b.ToTable("AspNetUserLogins", (string)null);
+                    b.ToTable("asp_net_user_logins", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
@@ -457,7 +457,7 @@ namespace Calendar.Auth.API.Migrations
                     b.HasIndex("RoleId")
                         .HasDatabaseName("ix_asp_net_user_roles_role_id");
 
-                    b.ToTable("AspNetUserRoles", (string)null);
+                    b.ToTable("asp_net_user_roles", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
@@ -481,7 +481,7 @@ namespace Calendar.Auth.API.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name")
                         .HasName("pk_asp_net_user_tokens");
 
-                    b.ToTable("AspNetUserTokens", (string)null);
+                    b.ToTable("asp_net_user_tokens", (string)null);
                 });
 
             modelBuilder.Entity("OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreApplication", b =>
@@ -564,7 +564,7 @@ namespace Calendar.Auth.API.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_open_iddict_applications_client_id");
 
-                    b.ToTable("OpenIddictApplications", (string)null);
+                    b.ToTable("open_iddict_applications", (string)null);
                 });
 
             modelBuilder.Entity("OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreAuthorization", b =>
@@ -615,9 +615,9 @@ namespace Calendar.Auth.API.Migrations
                         .HasName("pk_open_iddict_authorizations");
 
                     b.HasIndex("ApplicationId", "Status", "Subject", "Type")
-                        .HasDatabaseName("ix_open_iddict_authorizations_application_id_status_subject_type");
+                        .HasDatabaseName("ix_open_iddict_authorizations_application_id_status_subject_ty");
 
-                    b.ToTable("OpenIddictAuthorizations", (string)null);
+                    b.ToTable("open_iddict_authorizations", (string)null);
                 });
 
             modelBuilder.Entity("OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreScope", b =>
@@ -669,7 +669,7 @@ namespace Calendar.Auth.API.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_open_iddict_scopes_name");
 
-                    b.ToTable("OpenIddictScopes", (string)null);
+                    b.ToTable("open_iddict_scopes", (string)null);
                 });
 
             modelBuilder.Entity("OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreToken", b =>
@@ -746,7 +746,7 @@ namespace Calendar.Auth.API.Migrations
                     b.HasIndex("ApplicationId", "Status", "Subject", "Type")
                         .HasDatabaseName("ix_open_iddict_tokens_application_id_status_subject_type");
 
-                    b.ToTable("OpenIddictTokens", (string)null);
+                    b.ToTable("open_iddict_tokens", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -811,7 +811,7 @@ namespace Calendar.Auth.API.Migrations
                     b.HasOne("OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreApplication", "Application")
                         .WithMany("Authorizations")
                         .HasForeignKey("ApplicationId")
-                        .HasConstraintName("fk_open_iddict_authorizations_open_iddict_applications_application");
+                        .HasConstraintName("fk_open_iddict_authorizations_open_iddict_applications_applica");
 
                     b.Navigation("Application");
                 });
@@ -826,7 +826,7 @@ namespace Calendar.Auth.API.Migrations
                     b.HasOne("OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreAuthorization", "Authorization")
                         .WithMany("Tokens")
                         .HasForeignKey("AuthorizationId")
-                        .HasConstraintName("fk_open_iddict_tokens_open_iddict_authorizations_authorization_id");
+                        .HasConstraintName("fk_open_iddict_tokens_open_iddict_authorizations_authorization");
 
                     b.Navigation("Application");
 

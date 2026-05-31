@@ -10,12 +10,15 @@ using Calendar.IntegrationTests.Helpers;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.AspNetCore.Authentication;
-
 using NotificationService;
 
 namespace Calendar.IntegrationTests
 {
-    public class CalendarApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
+    public class CalendarApiFactory : WebApplicationFactory<CalendarApiAnchor>, IAsyncLifetime
+
+
+
+
     {
         private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder("postgres:15")
             .WithDatabase("CalendarDb_Test")

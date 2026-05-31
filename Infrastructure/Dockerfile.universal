@@ -4,12 +4,17 @@ WORKDIR /src
 
 # Копируем файлы проектов для восстановления зависимостей
 COPY ["src/Calendar/Calendar_Service.csproj", "src/Calendar/"]
+COPY ["src/Calendar.Auth.API/Calendar.Auth.API.csproj", "src/Calendar.Auth.API/"]
+COPY ["src/Calendar.Booking.API/Calendar.Booking.API.csproj", "src/Calendar.Booking.API/"]
 COPY ["src/Contracts/Calendar.Contracts.csproj", "src/Contracts/"]
 COPY ["src/NotificationService/NotificationService.csproj", "src/NotificationService/"]
 
 # Восстанавливаем зависимости
 RUN dotnet restore "src/Calendar/Calendar_Service.csproj"
+RUN dotnet restore "src/Calendar.Auth.API/Calendar.Auth.API.csproj"
+RUN dotnet restore "src/Calendar.Booking.API/Calendar.Booking.API.csproj"
 RUN dotnet restore "src/NotificationService/NotificationService.csproj"
+
 
 # Копируем весь исходный код
 COPY . .

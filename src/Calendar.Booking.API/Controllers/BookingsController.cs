@@ -27,8 +27,10 @@ public class BookingsController(IBookingService service, IMapper mapper) : Contr
         }
 
         var bookings = await service.GetBookingsAsync(userId, token);
+        var response = mapper.Map<IEnumerable<BookingResponse>>(bookings)
+            .Select(b => b with { UserId = userId });
 
-        return Ok(bookings);
+        return Ok(response);
     }
 
     [HttpGet("{id:guid}")]
@@ -54,7 +56,9 @@ public class BookingsController(IBookingService service, IMapper mapper) : Contr
             return Forbid("У вас нет прав для просмотра этого бронирования.");
         }
 
-        return Ok(booking);
+        var response = mapper.Map<BookingResponse>(booking) with { UserId = userId };
+
+        return Ok(response);
     }
 
     [HttpPost]
@@ -73,7 +77,7 @@ public class BookingsController(IBookingService service, IMapper mapper) : Contr
 
         var createdBooking = await service.CreateBookingAsync(userId, bookingDto, token);
 
-        return CreatedAtAction(nameof(GetBooking), new { id = createdBooking.Id }, mapper.Map<BookingResponse>(createdBooking));
+        return CreatedAtAction(nameof(GetBooking), new { id = createdBooking.Id }, mapper.Map<BookingResponse>(createdBooking) with { UserId = userId });
     }
 
     [HttpPut("{id:guid}")]
@@ -102,14 +106,14 @@ public class BookingsController(IBookingService service, IMapper mapper) : Contr
         var bookingDto = mapper.Map<BookingDto>(request);
         
 
-        var success = await service.UpdateBookingAsync(id, bookingDto, token);
+        var result = await service.UpdateBookingAsync(id, bookingDto, token);
 
-        if (success is null)
+        if (result is null)
         {
             return NotFound($"Бронирование с ID {id} не найдено.");
         }
 
-        return CreatedAtAction(nameof(GetBooking), new { id = success.Id }, mapper.Map<BookingResponse>(success));
+        return Ok(mapper.Map<BookingResponse>(result) with { UserId = userId });
     }
 
     [HttpDelete("{id:guid}")]

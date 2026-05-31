@@ -108,6 +108,9 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     
+    var context = services.GetRequiredService<AuthDbContext>();
+    await context.Database.MigrateAsync();
+    
     // А) Создаем роли
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
     if (!await roleManager.RoleExistsAsync("Admin"))

@@ -109,7 +109,7 @@ jobs:
         RabbitMq__Username: "testuser"
         RabbitMq__Password: "testpassword"
       run: |
-        dotnet test --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        dotnet test tests/Calendar.IntegrationTests/Calendar.IntegrationTests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=integration-test-results.trx"
 
   # --- STAGE 2: DELIVERY (DAY 5) ---
   build-and-push:

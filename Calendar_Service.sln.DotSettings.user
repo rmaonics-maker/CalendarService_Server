@@ -30,4 +30,7 @@
     &lt;Project Location="F:\projects\Calendar\Server\tests\Booking.UnitTests" Presentation="&amp;lt;tests&amp;gt;\&amp;lt;Booking.UnitTests&amp;gt;" /&gt;&#xD;
     &lt;Project Location="F:\projects\Calendar\Server\tests\Calendar.IntegrationTests" Presentation="&amp;lt;tests&amp;gt;\&amp;lt;Calendar.IntegrationTests&amp;gt;" /&gt;&#xD;
   &lt;/Or&gt;&#xD;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=b466854b_002Da15d_002D4b61_002Da687_002D98c919c32485/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="All tests from Solution" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+  &lt;Solution /&gt;&#xD;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

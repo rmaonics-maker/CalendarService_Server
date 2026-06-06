@@ -1,5 +1,5 @@
 # --- STAGE 1: Build & Publish ---
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS build
 WORKDIR /src
 
 # Копируем файлы проектов для восстановления зависимостей

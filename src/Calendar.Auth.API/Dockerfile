@@ -1,5 +1,5 @@
 # 1. Build
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS build
 WORKDIR /src
 
 COPY ["src/Calendar.Auth.API/Calendar.Auth.API.csproj", "src/Calendar.Auth.API/"]

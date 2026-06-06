@@ -1,5 +1,5 @@
 # 1. СБОРКА (Build Stage)
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS build
 WORKDIR /src
 
 COPY ["src/NotificationService/NotificationService.csproj", "src/NotificationService/"]

@@ -70,3 +70,4 @@ src/Calendar.Auth.API/secrets/
 appsettings.Development.json
 .kilo/
 appsettings.json
+GEMINI.md

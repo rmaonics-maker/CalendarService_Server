@@ -21,4 +21,10 @@ public static class Telemetry
     public static readonly Histogram<double> BookingCreationDuration =
         Meter.CreateHistogram<double>(
             "booking.creation.duration", "ms", "Полное время создания бронирования");
+
+    public static readonly Counter<long> BookingsCreatedCounter = Meter.CreateCounter<long>(
+        "booking_created_total", "count", "Total number of bookings created");
+
+    public static readonly Counter<long> BookingConflictCounter = Meter.CreateCounter<long>(
+        "booking_conflict_total", "count", "Total number of booking conflicts (Double Booking)");
 }

@@ -1,5 +1,6 @@
 ﻿using Calendar.Contracts.Events;
 using MassTransit;
+using NotificationService.Monitoring;
 
 namespace NotificationService;
 
@@ -39,6 +40,8 @@ public class NotificationConsumer(ILogger<NotificationConsumer> logger) : IConsu
                 logger.LogInformation($"Письмо успешно отправлено на {message.UserEmail}");
             }
         #endregion
+
+        Instrumentation.NotificationsSentCounter.Add(1, new KeyValuePair<string, object?>("email", message.UserEmail));
         
         return Task.CompletedTask;
     }

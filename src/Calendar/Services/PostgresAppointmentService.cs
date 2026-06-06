@@ -8,6 +8,9 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 
+using Calendar_Service.Monitoring;
+using System.Diagnostics;
+
 namespace Calendar_Service.Services;
 
 public class PostgresAppointmentService(
@@ -20,6 +23,7 @@ public class PostgresAppointmentService(
 {
     public async Task<AppointmentDto> CreateAppointmentAsync(AppointmentDto evt, CancellationToken token = default)
     {
+        var sw = Stopwatch.StartNew();
         await using var transaction = await context.Database.BeginTransactionAsync(token);
 
         try
@@ -41,6 +45,10 @@ public class PostgresAppointmentService(
                 UserId: appointment.UserId,
                 UserEmail: userEmail,
                 OccurredAt: appointment.CreatedAt), token);
+
+            Instrumentation.AppointmentsCreatedCounter.Add(1, 
+                new KeyValuePair<string, object?>("user_id", appointment.UserId.ToString()));
+            Instrumentation.AppointmentProcessingDuration.Record(sw.ElapsedMilliseconds);
 
             logger.LogInformation("Создано событие: ID={AppointmentId}, Title='{Title}', UserId={UserId}",
                 appointment.Id, appointment.Title, appointment.UserId);

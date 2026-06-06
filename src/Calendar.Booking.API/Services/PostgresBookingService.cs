@@ -57,6 +57,20 @@ public class PostgresBookingService(
 
         try
         {
+            // ПРОВЕРКА КОНФЛИКТОВ (Double Booking)
+            var range = new NpgsqlRange<DateTime>(
+                bookingDto.StartTimeUtc.UtcDateTime,
+                bookingDto.EndTimeUtc.UtcDateTime);
+
+            var isOccupied = await context.Bookings
+                .AnyAsync(b => b.RoomId == bookingDto.RoomId && b.Period.Overlaps(range), token);
+
+            if (isOccupied)
+            {
+                Telemetry.BookingConflictCounter.Add(1, new KeyValuePair<string, object?>("room_id", bookingDto.RoomId));
+                throw new InvalidOperationException($"Комната {bookingDto.RoomId} уже занята на выбранный период.");
+            }
+
             var bookingModel = mapper.Map<BookingModel>(bookingDto);
             bookingModel.UserId = userId;
             bookingModel.CreatedAt = timeProvider.GetUtcNow();
@@ -80,6 +94,7 @@ public class PostgresBookingService(
             
             sw.Stop();
             Telemetry.BookingCreationDuration.Record(sw.Elapsed.TotalMilliseconds);
+            Telemetry.BookingsCreatedCounter.Add(1, new KeyValuePair<string, object?>("user_id", userId.ToString()));
             
             logger.LogInformation(
                 "Создано бронирование: ID={BookingId}, Title='{Title}', UserId={UserId}, RoomId={RoomId}",

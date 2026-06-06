@@ -11,19 +11,22 @@ using NotificationService.Consumers;
 using NotificationService.Data;
 using NotificationService.Services;
 
+using NotificationService.Monitoring;
+
 namespace NotificationService;
 
 public class Program
 {
     public static void Main(string[] args)
     {
-        var builder = Host.CreateApplicationBuilder(args);
+        var builder = WebApplication.CreateBuilder(args);
         builder.Services.AddHostedService<Worker>();
 
         builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection(RabbitMqOptions.SectionName));
         
         builder.Services.AddMassTransit(x =>
         {
+            // ... (MassTransit config)
             x.SetKebabCaseEndpointNameFormatter();
 
             x.AddConsumer<NotificationConsumer>();
@@ -100,8 +103,12 @@ public class Program
                     .AddOtlpExporter();
             })
             .WithMetrics(providerBuilder => providerBuilder
-                .AddMeter(InstrumentationOptions.MeterName)
-                .AddAspNetCoreInstrumentation());
+                .AddMeter(Instrumentation.MeterName)
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
+                .AddRuntimeInstrumentation()
+                .AddProcessInstrumentation()
+                .AddPrometheusExporter());
 
         builder.Services.AddScoped<IEmailService, DummyEmailService>();
 
@@ -111,7 +118,8 @@ public class Program
         
         builder.Services.AddSingleton(TimeProvider.System);
         
-        var host = builder.Build();
-        host.Run();
+        var app = builder.Build();
+        app.MapPrometheusScrapingEndpoint();
+        app.Run();
     }
 }

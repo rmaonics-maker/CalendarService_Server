@@ -142,8 +142,12 @@ builder.Services.AddOpenTelemetry()
             .AddOtlpExporter();
     })
     .WithMetrics(providerBuilder => providerBuilder
-        .AddMeter(InstrumentationOptions.MeterName)
-        .AddAspNetCoreInstrumentation());
+        .AddMeter(Telemetry.Meter.Name)
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddRuntimeInstrumentation()
+        .AddProcessInstrumentation()
+        .AddPrometheusExporter());
 
 // Redis
 var redisConnectionString = builder.Configuration.GetConnectionString("Redis")
@@ -174,6 +178,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseHealthChecks("/health");
+app.MapPrometheusScrapingEndpoint();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -190,4 +195,3 @@ app.Run();
 
 public partial class Program { } 
 public class BookingApiAnchor { } 
- 

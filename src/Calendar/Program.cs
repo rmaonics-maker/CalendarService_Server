@@ -2,6 +2,7 @@ using Calendar_Service.Consumers;
 using Calendar_Service.Data;
 using Calendar_Service.Options;
 using Calendar_Service.Services;
+using Calendar_Service.Monitoring;
 using FluentValidation;
 using MassTransit;
 using MassTransit.Monitoring;
@@ -92,8 +93,12 @@ builder.Services.AddOpenTelemetry()
             .AddOtlpExporter();
     })
     .WithMetrics(providerBuilder => providerBuilder
-        .AddMeter(InstrumentationOptions.MeterName)
-        .AddAspNetCoreInstrumentation());
+        .AddMeter(Instrumentation.MeterName)
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddRuntimeInstrumentation()
+        .AddProcessInstrumentation()
+        .AddPrometheusExporter());
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(option => option
@@ -148,6 +153,7 @@ using (var scope = app.Services.CreateScope())
 
 // 2. MIDDLEWARE PIPELINE (Конвейер запроса)
 app.UseHealthChecks("/health");
+app.MapPrometheusScrapingEndpoint();
 app.UseSwagger(); 
 app.UseSwaggerUI(c => 
 {
@@ -165,4 +171,3 @@ app.Run();
 
 public partial class Program { }
 public class CalendarApiAnchor { } 
- 

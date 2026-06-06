@@ -4,7 +4,19 @@ using Calendar.Auth.API.Data;
 using Calendar.Auth.API.Entities;
 using Microsoft.AspNetCore.Identity;
 
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddOpenTelemetry()
+    .WithMetrics(providerBuilder => providerBuilder
+        .SetResourceBuilder(ResourceBuilder.CreateDefault()
+            .AddService("Calendar.Auth.Api"))
+        .AddAspNetCoreInstrumentation()
+        .AddRuntimeInstrumentation()
+        .AddProcessInstrumentation()
+        .AddPrometheusExporter());
 
 builder.Services.AddOpenApi();
 
@@ -102,6 +114,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthentication(); 
 app.UseAuthorization();  
+app.MapPrometheusScrapingEndpoint();
 app.MapControllers();
 
 using (var scope = app.Services.CreateScope())

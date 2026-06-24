@@ -48,6 +48,13 @@ builder.Services.AddOpenIddict()
         options.AllowAuthorizationCodeFlow()
             .AllowRefreshTokenFlow();
 
+        // Resource Owner Password Credentials — только для dev/load-тестов.
+        // В проде ROPC отключён: OpenIddict сам отклонит grant_type=password.
+        if (builder.Environment.IsDevelopment())
+        {
+            options.AllowPasswordFlow();
+        }
+
         options.RequireProofKeyForCodeExchange();
 
         options.SetAccessTokenLifetime(TimeSpan.FromMinutes(15))
@@ -60,6 +67,7 @@ builder.Services.AddOpenIddict()
 
         options.UseAspNetCore()
             .EnableAuthorizationEndpointPassthrough()
+            .EnableTokenEndpointPassthrough()
             .DisableTransportSecurityRequirement();
     })
     .AddValidation(options =>
@@ -164,6 +172,25 @@ using (var scope = app.Services.CreateScope())
                 OpenIddict.Abstractions.OpenIddictConstants.Permissions.Prefixes.Scope + "roles",
                 OpenIddict.Abstractions.OpenIddictConstants.Permissions.Prefixes.Scope + "email",
                 OpenIddict.Abstractions.OpenIddictConstants.Permissions.Prefixes.Scope + "profile"
+            }
+        });
+    }
+
+    // Г) Dev-only клиент для нагрузочных тестов (ROPC grant)
+    if (app.Environment.IsDevelopment()
+        && await manager.FindByClientIdAsync("loadtest_client") is null)
+    {
+        await manager.CreateAsync(new OpenIddict.Abstractions.OpenIddictApplicationDescriptor
+        {
+            ClientId = "loadtest_client",
+            ClientSecret = "loadtest-secret",
+            DisplayName = "NBomber Load Test Client",
+            Permissions =
+            {
+                OpenIddict.Abstractions.OpenIddictConstants.Permissions.Endpoints.Token,
+                OpenIddict.Abstractions.OpenIddictConstants.Permissions.GrantTypes.Password,
+                OpenIddict.Abstractions.OpenIddictConstants.Permissions.GrantTypes.RefreshToken,
+                OpenIddict.Abstractions.OpenIddictConstants.Permissions.Prefixes.Scope + "calendar_api"
             }
         });
     }

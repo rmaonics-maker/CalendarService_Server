@@ -1,0 +1,7 @@
+﻿services:
+  calendar.loadtests:
+    image: calendar.loadtests
+    build:
+      context: .
+      dockerfile: tests/Calendar.LoadTests/Dockerfile
+

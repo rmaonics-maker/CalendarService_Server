@@ -8,6 +8,7 @@ using Calendar.Contracts.Requests;
 using Calendar.Contracts.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Calendar.Booking.API.Controllers;
 
@@ -75,9 +76,20 @@ public class BookingsController(IBookingService service, IMapper mapper) : Contr
         var bookingDto = mapper.Map<BookingDto>(request);
         bookingDto = bookingDto with {CreatedAtUtc = DateTime.UtcNow};
 
-        var createdBooking = await service.CreateBookingAsync(userId, bookingDto, token);
+        try
+        {
+            var createdBooking = await service.CreateBookingAsync(userId, bookingDto, token);
 
-        return CreatedAtAction(nameof(GetBooking), new { id = createdBooking.Id }, mapper.Map<BookingResponse>(createdBooking) with { UserId = userId });
+            return CreatedAtAction(nameof(GetBooking), new { id = createdBooking.Id }, mapper.Map<BookingResponse>(createdBooking) with { UserId = userId });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+        catch (DbUpdateException ex)
+        {
+            return Conflict(new { message = "A database error occurred while creating the booking.", details = ex.InnerException?.Message });
+        }
     }
 
     [HttpPut("{id:guid}")]

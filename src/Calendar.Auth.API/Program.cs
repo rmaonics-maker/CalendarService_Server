@@ -198,22 +198,57 @@ using (var scope = app.Services.CreateScope())
     }
 
     // Д) Dev-only клиент для нагрузочных тестов (ROPC grant)
-    if (app.Environment.IsDevelopment()
-        && await manager.FindByClientIdAsync("loadtest_client") is null)
+    // Upsert: если клиент уже создан предыдущим запуском, синхронизируем его
+    // permissions с актуальным списком scope-правил. Иначе добавленный позже scope
+    // (например booking_api) не сохранится, и /connect/token вернёт ID2051
+    // "This client application is not allowed to use the specified scope".
+    if (app.Environment.IsDevelopment())
     {
-        await manager.CreateAsync(new OpenIddict.Abstractions.OpenIddictApplicationDescriptor
+        var requiredPermissions = new[]
         {
-            ClientId = "loadtest_client",
-            ClientSecret = "loadtest-secret",
-            DisplayName = "NBomber Load Test Client",
-            Permissions =
+            OpenIddict.Abstractions.OpenIddictConstants.Permissions.Endpoints.Token,
+            OpenIddict.Abstractions.OpenIddictConstants.Permissions.GrantTypes.Password,
+            OpenIddict.Abstractions.OpenIddictConstants.Permissions.GrantTypes.RefreshToken,
+            OpenIddict.Abstractions.OpenIddictConstants.Permissions.Prefixes.Scope + "calendar_api",
+            OpenIddict.Abstractions.OpenIddictConstants.Permissions.Prefixes.Scope + "booking_api"
+        };
+
+        var existing = await manager.FindByClientIdAsync("loadtest_client");
+        if (existing is null)
+        {
+            var createDescriptor = new OpenIddict.Abstractions.OpenIddictApplicationDescriptor
             {
-                OpenIddict.Abstractions.OpenIddictConstants.Permissions.Endpoints.Token,
-                OpenIddict.Abstractions.OpenIddictConstants.Permissions.GrantTypes.Password,
-                OpenIddict.Abstractions.OpenIddictConstants.Permissions.GrantTypes.RefreshToken,
-                OpenIddict.Abstractions.OpenIddictConstants.Permissions.Prefixes.Scope + "calendar_api"
+                ClientId = "loadtest_client",
+                ClientSecret = "loadtest-secret",
+                DisplayName = "NBomber Load Test Client"
+            };
+            foreach (var permission in requiredPermissions)
+            {
+                createDescriptor.Permissions.Add(permission);
             }
-        });
+            await manager.CreateAsync(createDescriptor);
+        }
+        else
+        {
+            var descriptor = new OpenIddict.Abstractions.OpenIddictApplicationDescriptor();
+            await manager.PopulateAsync(descriptor, existing);
+
+            var changed = false;
+            foreach (var permission in requiredPermissions)
+            {
+                if (!descriptor.Permissions.Contains(permission))
+                {
+                    descriptor.Permissions.Add(permission);
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                await manager.PopulateAsync(existing, descriptor);
+                await manager.UpdateAsync(existing);
+            }
+        }
     }
 }
 

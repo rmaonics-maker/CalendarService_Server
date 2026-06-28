@@ -124,6 +124,8 @@ services:
       RabbitMq__Host: ${RABBIT_HOST}
       RabbitMq__Username: ${RABBIT_USER}
       RabbitMq__Password: ${RABBIT_PASS}
+      Authentication__Authority: "http://calendar-auth-api:8081/"
+      Authentication__Audience: "booking_api"
     depends_on:
       booking-db:
         condition: service_healthy

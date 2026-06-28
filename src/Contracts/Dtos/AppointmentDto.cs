@@ -13,4 +13,5 @@ public sealed record AppointmentDto
     public RecurrencePatternDto? RecurrentRule { get; init; }
     public Guid UserId { get; init; }
     public DateTimeOffset? CreatedAt { get; init; }
+    public int? RoomId { get; init; }
 }

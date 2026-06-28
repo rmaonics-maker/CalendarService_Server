@@ -12,4 +12,5 @@ public sealed record AppointmentResponse(
     string Location,
     string? RecurrentRule,
     Guid UserId,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    int? RoomId = null);

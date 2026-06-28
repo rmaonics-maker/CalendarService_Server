@@ -35,7 +35,8 @@ public class PostgresAppointmentServiceTests : IDisposable
         var mapper = Substitute.For<IMapper>();
         var timeProvider = new FakeTimeProvider();
         var recurrenceEvaluator = Substitute.For<IRecurrenceEvaluator>();
-        _service = new PostgresAppointmentService(_context, endPoint, mapper, logger, timeProvider, recurrenceEvaluator);
+        var bookingPublisher = Substitute.For<IBookingPublisher>();
+        _service = new PostgresAppointmentService(_context, endPoint, mapper, logger, timeProvider, recurrenceEvaluator, bookingPublisher);
     }
 
     private class TestDbContext(DbContextOptions<ApplicationDbContext> options) : ApplicationDbContext(options)

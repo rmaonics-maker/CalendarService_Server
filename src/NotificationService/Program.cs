@@ -35,6 +35,7 @@ public class Program
             x.AddConsumer<BookingCreatedConsumer>();
             x.AddConsumer<BookingUpdatedConsumer>();
             x.AddConsumer<BookingDeletedConsumer>();
+            x.AddConsumer<BookingFailedConsumer>();
 
             x.AddEntityFrameworkOutbox<NotificationDbContext>(o =>
             {

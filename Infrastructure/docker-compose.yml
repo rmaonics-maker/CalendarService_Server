@@ -150,6 +150,7 @@ services:
       start_period: 40s
     container_name: calendar-api-1
     environment:
+      ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Host=${CALENDAR_DB_HOST};Port=5432;Database=${CALENDAR_DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
       RabbitMq__Host: ${RABBIT_HOST}
       RabbitMq__Username: ${RABBIT_USER}
@@ -158,6 +159,8 @@ services:
       OTEL_SERVICENAME: "Calendar.Api"
       # Политики
       RetryPolicy__MaxRetries: ${RETRY_COUNT}
+      Authentication__Authority: "http://calendar-auth-api:8081/"
+      Authentication__Audience: "calendar_api"
     depends_on:
       calendar-db:
         condition: service_healthy
@@ -165,6 +168,8 @@ services:
         condition: service_healthy
     networks:
       - calendar-net
+    ports:
+      - "8080:8080"
     secrets:
     - source: api_key_secret
       target: ExternalApi__ApiKey
@@ -208,10 +213,12 @@ services:
       start_period: 40s
     container_name: calendar-auth-api-1
     environment:
+      ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Host=${AUTH_DB_HOST};Port=5432;Database=${AUTH_DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
       RabbitMq__Host: ${RABBIT_HOST}
       RabbitMq__Username: ${RABBIT_USER}
       RabbitMq__Password: ${RABBIT_PASS}
+      OpenIddict__Issuer: "http://calendar-auth-api:8081/"
     depends_on:
       auth-db:
         condition: service_healthy

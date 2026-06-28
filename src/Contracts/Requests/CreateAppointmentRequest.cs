@@ -9,6 +9,7 @@ public sealed record CreateAppointmentRequest(
     DateTimeOffset StartTime,
     TimeSpan Duration,
     string Location,
-    string? RecurrentRule
+    string? RecurrentRule,
+    int? RoomId = null
     //Guid UserId // Берётся из JWT токена
     );

@@ -1,11 +1,11 @@
 using Calendar_Service.Consumers;
 using Calendar_Service.Data;
+using Calendar_Service.Models;
 using Calendar_Service.Options;
 using Calendar_Service.Services;
 using Calendar_Service.Monitoring;
 using FluentValidation;
 using MassTransit;
-using MassTransit.Monitoring;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using OpenTelemetry.Metrics;
@@ -29,15 +29,8 @@ builder.Services.AddMassTransit(x =>
     x.SetKebabCaseEndpointNameFormatter();
 
     x.AddConsumer<UserRegisteredConsumer>();
-
-    if (builder.Environment.IsEnvironment("Testing"))
-    {
-        x.UsingInMemory((context, cfg) =>
-        {
-            cfg.ConfigureEndpoints(context);
-        });
-    }
-    else
+    
+    if (!builder.Environment.IsEnvironment("Testing"))
     {
         x.AddEntityFrameworkOutbox<ApplicationDbContext>(o =>
         {
@@ -49,12 +42,17 @@ builder.Services.AddMassTransit(x =>
             o.QueryDelay = TimeSpan.FromSeconds(2);
             o.QueryMessageLimit = 100;
         });
+    }
 
-        x.AddConfigureEndpointsCallback((context, name, cfg) =>
+    if (builder.Environment.IsEnvironment("Testing"))
+    {
+        x.UsingInMemory((context, cfg) =>
         {
-            cfg.UseEntityFrameworkOutbox<ApplicationDbContext>(context);
+            cfg.ConfigureEndpoints(context);
         });
-
+    }
+    else
+    {
         x.UsingRabbitMq((context, cfg) =>
         {
             var rabbitMqOptions = context.GetRequiredService<Microsoft.Extensions.Options.IOptions<RabbitMqOptions>>().Value;
@@ -64,8 +62,13 @@ builder.Services.AddMassTransit(x =>
                 h.Username(rabbitMqOptions.Username);
                 h.Password(rabbitMqOptions.Password);
             });
-
+            
             cfg.ConfigureEndpoints(context);
+        });
+        
+        x.AddConfigureEndpointsCallback((context, name, cfg) =>
+        {
+            cfg.UseEntityFrameworkOutbox<ApplicationDbContext>(context);
         });
     }
 });
@@ -109,6 +112,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(option => option
 builder.Services.AddScoped<IUserService, PostgresUserService>();
 builder.Services.AddScoped<IAppointmentService, PostgresAppointmentService>();
 builder.Services.AddScoped<IRecurrenceEvaluator, RecurrenceEvaluator>();
+builder.Services.AddScoped<IBookingPublisher, BookingPublisher>();
 
 var secretPath = "/run/secrets";
 if(Directory.Exists(secretPath))
@@ -148,6 +152,23 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<ApplicationDbContext>();
     await context.Database.MigrateAsync();
+
+    // Dev-only: создаём тестового пользователя для нагрузочных тестов
+    if (app.Environment.IsDevelopment())
+    {
+        var loadTestUserId = Guid.Parse("71ab3b0a-a75b-4ef3-b73f-37d4e66dd2b2");
+        if (!await context.Users.AnyAsync(u => u.Id == loadTestUserId))
+        {
+            context.Users.Add(new User
+            {
+                Id = loadTestUserId,
+                Name = "Load Test User",
+                Email = "admin@calendar.com",
+                Balance = 1000.00m
+            });
+            await context.SaveChangesAsync();
+        }
+    }
 }
 
 

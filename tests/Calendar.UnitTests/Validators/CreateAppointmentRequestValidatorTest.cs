@@ -187,7 +187,57 @@ public class CreateAppointmentRequestValidatorTest
     }
 
 #endregion
-    
+
+#region RoomId
+
+    [Fact]
+    public void RoomId_Should_NotHaveError_When_Null()
+    {
+        // Arrange — комната опциональна
+        var request = _fixture.Build<CreateAppointmentRequest>()
+            .With(x => x.RoomId, (int?)null)
+            .Create();
+
+        // Act
+        var result = _validator.TestValidate(request);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(x => x.RoomId);
+    }
+
+    [Fact]
+    public void RoomId_Should_HaveError_When_ZeroOrNegative()
+    {
+        // Arrange
+        var request = _fixture.Build<CreateAppointmentRequest>()
+            .With(x => x.RoomId, 0)
+            .Create();
+
+        // Act
+        var result = _validator.TestValidate(request);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.RoomId)
+            .WithErrorMessage("RoomId must be a positive number.");
+    }
+
+    [Fact]
+    public void RoomId_Should_NotHaveError_When_Positive()
+    {
+        // Arrange
+        var request = _fixture.Build<CreateAppointmentRequest>()
+            .With(x => x.RoomId, 1)
+            .Create();
+
+        // Act
+        var result = _validator.TestValidate(request);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(x => x.RoomId);
+    }
+
+#endregion
+
 #region Complex
     [Fact]
     public void Should_HaveMultipleErrors_When_MultipleFieldsInvalid()

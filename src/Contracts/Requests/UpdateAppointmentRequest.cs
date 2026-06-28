@@ -11,4 +11,5 @@ public sealed record UpdateAppointmentRequest(
     string Description,
     TimeSpan Duration,
     UpdateType UpdateType,
-    Instant OriginalStartTime);
+    Instant OriginalStartTime,
+    int? RoomId = null);

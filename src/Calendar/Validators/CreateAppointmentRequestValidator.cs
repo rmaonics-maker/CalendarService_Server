@@ -21,5 +21,9 @@ public class CreateAppointmentRequestValidator : AbstractValidator<CreateAppoint
         RuleFor(x => x.StartTime)
             .NotEmpty().WithMessage("Start time is required.")
             .GreaterThan(DateTimeOffset.UtcNow).WithMessage("Start time must be in the future.");
+
+        RuleFor(x => x.RoomId)
+            .GreaterThan(0).WithMessage("RoomId must be a positive number.")
+            .When(x => x.RoomId.HasValue);
     }
 }

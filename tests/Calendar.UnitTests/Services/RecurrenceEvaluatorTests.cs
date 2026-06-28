@@ -188,4 +188,77 @@ public class RecurrenceEvaluatorTests
         result.Events.Should().HaveCount(2);
         result.Events.Should().NotContain(e => e.StartTime == cancelDate.ToDateTimeOffset());
     }
+
+    [Fact]
+    public void ExpandOccurrences_ShouldReturnSingleSlot_WhenNoRecurrence()
+    {
+        // Arrange
+        var start = Instant.FromUtc(2026, 5, 23, 10, 0);
+        var end = start.Plus(Duration.FromHours(1));
+        var slot = new TimeSlot(start, end);
+        var range = new TimeSlot(start.Minus(Duration.FromDays(1)), end.Plus(Duration.FromDays(1)));
+
+        // Act
+        var result = _evaluator.ExpandOccurrences(slot, recurrence: null, from: range.Start, to: range.End, maxOccurrences: 10);
+
+        // Assert
+        result.Should().HaveCount(1);
+        result[0].Start.Should().Be(start);
+        result[0].End.Should().Be(end);
+    }
+
+    [Fact]
+    public void ExpandOccurrences_ShouldReturnMultipleSlots_WhenDailyRecurrence()
+    {
+        // Arrange
+        var start = Instant.FromUtc(2026, 5, 23, 10, 0);
+        var slot = new TimeSlot(start, start.Plus(Duration.FromHours(1)));
+        var recurrence = new RecurrencePatternDto("FREQ=DAILY;COUNT=3", null, 3);
+        var range = new TimeSlot(start, start.Plus(Duration.FromDays(10)));
+
+        // Act
+        var result = _evaluator.ExpandOccurrences(slot, recurrence, range.Start, range.End, maxOccurrences: 100);
+
+        // Assert
+        result.Should().HaveCount(3);
+        result[0].Start.Should().Be(start);
+        result[1].Start.Should().Be(start.Plus(Duration.FromDays(1)));
+        result[2].Start.Should().Be(start.Plus(Duration.FromDays(2)));
+        // Длительность каждого слота сохраняется
+        foreach (var occurrence in result)
+        {
+            (occurrence.End - occurrence.Start).Should().Be(Duration.FromHours(1));
+        }
+    }
+
+    [Fact]
+    public void ExpandOccurrences_ShouldReturnEmpty_WhenSingleSlotOutsideRange()
+    {
+        // Arrange — слот в прошлом, вне диапазона поиска
+        var start = Instant.FromUtc(2020, 1, 1, 10, 0);
+        var slot = new TimeSlot(start, start.Plus(Duration.FromHours(1)));
+        var range = new TimeSlot(Instant.FromUtc(2026, 1, 1, 0, 0), Instant.FromUtc(2026, 12, 31, 0, 0));
+
+        // Act
+        var result = _evaluator.ExpandOccurrences(slot, recurrence: null, from: range.Start, to: range.End, maxOccurrences: 10);
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ExpandOccurrences_ShouldRespectMaxOccurrences()
+    {
+        // Arrange — бесконечное правило, ограниченное maxOccurrences
+        var start = Instant.FromUtc(2026, 5, 23, 10, 0);
+        var slot = new TimeSlot(start, start.Plus(Duration.FromHours(1)));
+        var recurrence = new RecurrencePatternDto("FREQ=DAILY", null, null);
+        var range = new TimeSlot(start, start.Plus(Duration.FromDays(1000)));
+
+        // Act
+        var result = _evaluator.ExpandOccurrences(slot, recurrence, range.Start, range.End, maxOccurrences: 5);
+
+        // Assert
+        result.Should().HaveCount(5);
+    }
 }

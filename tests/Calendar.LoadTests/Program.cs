@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using NBomber.Contracts.Stats;
 using NBomber.CSharp;
 using NBomber.Http.CSharp;
@@ -30,6 +31,25 @@ class Program
                               "recurrentRule": null
                             }
                             """;
+    
+    private static string BuildRequestBody(long invocationCounter)
+    {
+        // Уникальный слот: базовая дата + сдвиг по 45 минут на каждый запрос.
+        var baseStart = new DateTime(2027, 1, 1, 8, 0, 0, DateTimeKind.Utc);
+        var slotStart = baseStart.AddMinutes(45 * invocationCounter);
+        var body = $$"""
+                     {
+                       "title": "Load Test Event",
+                       "description": "Created by NBomber",
+                       "startTime": "{{slotStart:yyyy-MM-ddTHH:mm:ssZ}}",
+                       "duration": "00:30:00",
+                       "location": "Room A",
+                       "recurrentRule": null,
+                       "roomId": 1
+                     }
+                     """;
+        return body;
+    }
 
     static async Task Main(string[] args)
     {
@@ -45,11 +65,12 @@ class Program
                 context,
                 async () =>
                 {
+                    var body = BuildRequestBody(context.InvocationNumber);
                     var request = Http.CreateRequest("POST", CalendarApiUrl + CalendarEndpoint)
                         .WithHeader("Authorization", $"Bearer {accessToken}")
                         .WithHeader("Idempotency-Key", Guid.NewGuid().ToString())
                         .WithHeader("Content-Type", "application/json")
-                        .WithBody(new StringContent(JsonBody, Encoding.UTF8, "application/json"));
+                        .WithBody(new StringContent(body, Encoding.UTF8, "application/json"));
 
                     var response = await Http.Send(httpClient, request);
 
@@ -101,7 +122,8 @@ class Program
             throw new InvalidOperationException($"Не удалось получить JWT: {resp.StatusCode} {body}");
         }
 
-        var token = JsonSerializer.Deserialize<TokenResponse>(body)
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var token = JsonSerializer.Deserialize<TokenResponse>(body, options)
                     ?? throw new InvalidOperationException("Пустой ответ от token endpoint.");
         return token;
     }
@@ -109,9 +131,16 @@ class Program
     // Минимальная модель ответа /connect/token
     private sealed class TokenResponse
     {
+        [JsonPropertyName("access_token")]
         public string AccessToken { get; set; } = string.Empty;
+
+        [JsonPropertyName("token_type")]
         public string TokenType { get; set; } = string.Empty;
+
+        [JsonPropertyName("expires_in")]
         public int ExpiresIn { get; set; }
+
+        [JsonPropertyName("refresh_token")]
         public string RefreshToken { get; set; } = string.Empty;
     }
 }

@@ -1,3 +1,4 @@
+using Calendar.Booking.API.Consumers;
 using Calendar.Booking.API.Data;
 using Calendar.Booking.API.Options;
 using Calendar.Booking.API.Services;
@@ -32,6 +33,11 @@ builder.Services.Configure<BookingRabbitMqOptions>(builder.Configuration.GetSect
 builder.Services.AddMassTransit(x =>
 {
     x.SetKebabCaseEndpointNameFormatter();
+
+    // Потребители команд из Calendar API.
+    x.AddConsumer<BookRoomCommandConsumer>();
+    x.AddConsumer<DeleteBookingsByAppointmentIdConsumer>();
+
     x.AddEntityFrameworkOutbox<BookingDbContext>(o =>
     {
         o.UsePostgres();
@@ -42,12 +48,7 @@ builder.Services.AddMassTransit(x =>
         o.QueryDelay = TimeSpan.FromSeconds(2);
         o.QueryMessageLimit = 100;
     });
-    
-    x.AddConfigureEndpointsCallback((context, name, cfg) =>
-    {
-        cfg.UseEntityFrameworkOutbox<BookingDbContext>(context);
-    });
-    
+
     x.UsingRabbitMq((context, cfg) =>
     {
         var rabbitMqOptions = context.GetRequiredService<Microsoft.Extensions.Options.IOptions<BookingRabbitMqOptions>>().Value;
@@ -57,6 +58,12 @@ builder.Services.AddMassTransit(x =>
             h.Username(rabbitMqOptions.Username);
             h.Password(rabbitMqOptions.Password);
         });
+
+        // Ретраи для непредвиденных ошибок.
+        // Конфликты (комната занята) обрабатываются в потребителе без ретраев.
+        // Идемпотентность входящих сообщений обеспечивается детерминированным MessageId
+        // из Calendar API + GiST-проверкой пересечений в CreateBookingAsync.
+        cfg.UseMessageRetry(r => r.Intervals(100, 500, 1000));
 
         cfg.ConfigureEndpoints(context);
     });

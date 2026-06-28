@@ -45,11 +45,18 @@ builder.Services.AddOpenIddict()
             .SetIntrospectionEndpointUris("connect/introspect")
             .SetUserInfoEndpointUris("connect/userinfo");
 
+        // Фиксированный issuer — чтобы токены были валидны
+        // как для клиентов внутри Docker-сети, так и с хоста.
+        var issuer = builder.Configuration["OpenIddict:Issuer"];
+        if (!string.IsNullOrEmpty(issuer))
+        {
+            options.SetIssuer(new Uri(issuer));
+        }
+
         options.AllowAuthorizationCodeFlow()
             .AllowRefreshTokenFlow();
 
         // Resource Owner Password Credentials — только для dev/load-тестов.
-        // В проде ROPC отключён: OpenIddict сам отклонит grant_type=password.
         if (builder.Environment.IsDevelopment())
         {
             options.AllowPasswordFlow();
@@ -150,7 +157,21 @@ using (var scope = app.Services.CreateScope())
         await userManager.AddToRoleAsync(adminUser, "Admin");
     }
 
-    // В) Создаем клиента для Postman 
+    // В) Создаем scopes
+    var scopeManager = services.GetRequiredService<OpenIddict.Abstractions.IOpenIddictScopeManager>();
+    foreach (var scopeName in new[] { "calendar_api", "booking_api" })
+    {
+        if (await scopeManager.FindByNameAsync(scopeName) is null)
+        {
+            await scopeManager.CreateAsync(new OpenIddict.Abstractions.OpenIddictScopeDescriptor
+            {
+                Name = scopeName,
+                DisplayName = scopeName
+            });
+        }
+    }
+
+    // Г) Создаем клиента для Postman 
     var manager = services.GetRequiredService<OpenIddict.Abstractions.IOpenIddictApplicationManager>();
     if (await manager.FindByClientIdAsync("postman_client") is null)
     {
@@ -176,7 +197,7 @@ using (var scope = app.Services.CreateScope())
         });
     }
 
-    // Г) Dev-only клиент для нагрузочных тестов (ROPC grant)
+    // Д) Dev-only клиент для нагрузочных тестов (ROPC grant)
     if (app.Environment.IsDevelopment()
         && await manager.FindByClientIdAsync("loadtest_client") is null)
     {

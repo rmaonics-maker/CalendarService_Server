@@ -69,6 +69,7 @@ public class AppointmentMappingProfile : Profile
                 src.Location ?? string.Empty,
                 src.RecurrentRule != null ? src.RecurrentRule.RRule : null,
                 src.UserId,
-                src.CreatedAt?.UtcDateTime ?? DateTime.UtcNow));
+                src.CreatedAt?.UtcDateTime ?? DateTime.UtcNow,
+                src.RoomId));
     }
 }

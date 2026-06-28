@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Calendar_Service.Data;
 using Calendar_Service.Models;
+using Calendar.Contracts.Commands;
 using Calendar.Contracts.Dtos;
 using Calendar.Contracts.Events;
 using Calendar.Contracts.Types;
@@ -10,6 +11,8 @@ using NodaTime;
 
 using Calendar_Service.Monitoring;
 using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Calendar_Service.Services;
 
@@ -19,7 +22,8 @@ public class PostgresAppointmentService(
     IMapper mapper,
     ILogger<PostgresAppointmentService> logger,
     TimeProvider timeProvider,
-    IRecurrenceEvaluator recurrenceEvaluator) : IAppointmentService
+    IRecurrenceEvaluator recurrenceEvaluator,
+    IBookingPublisher bookingPublisher) : IAppointmentService
 {
     public async Task<AppointmentDto> CreateAppointmentAsync(AppointmentDto evt, CancellationToken token = default)
     {
@@ -31,14 +35,16 @@ public class PostgresAppointmentService(
             var appointment = mapper.Map<Appointment>(evt);
             appointment.CreatedAt = timeProvider.GetUtcNow();
             context.Appointments.Add(appointment);
+            
             await context.SaveChangesAsync(token);
 
             var userEmail = await context.Users
                 .Where(u => u.Id == appointment.UserId)
                 .Select(u => u.Email).FirstOrDefaultAsync(token);
 
-            await transaction.CommitAsync(token);
+            
 
+            // Публикация после успешного коммита (outbox временно отключён).
             await publishEndpoint.Publish(new AppointmentCreatedEvent(
                 AppointmentId: appointment.Id,
                 Title: appointment.Title,
@@ -46,13 +52,23 @@ public class PostgresAppointmentService(
                 UserEmail: userEmail,
                 OccurredAt: appointment.CreatedAt), token);
 
-            Instrumentation.AppointmentsCreatedCounter.Add(1, 
+            // Бронирование комнаты (если указан RoomId).
+            // Включает раскрытие повторяющихся событий: одно BookRoomCommand на каждое вхождение.
+            // Используем исходный evt (содержит RoomId из запроса), дополняя присвоенным Id.
+            var evtForBooking = evt with { Id = appointment.Id.ToString() };
+            await bookingPublisher.PublishForAppointmentAsync(evtForBooking, appointment.Slot, token);
+
+            await context.SaveChangesAsync(token);
+            await transaction.CommitAsync(token);
+            
+            Instrumentation.AppointmentsCreatedCounter.Add(1,
                 new KeyValuePair<string, object?>("user_id", appointment.UserId.ToString()));
             Instrumentation.AppointmentProcessingDuration.Record(sw.ElapsedMilliseconds);
 
             logger.LogInformation("Создано событие: ID={AppointmentId}, Title='{Title}', UserId={UserId}",
                 appointment.Id, appointment.Title, appointment.UserId);
-            return mapper.Map<AppointmentDto>(appointment);
+            // Возвращаем исходный evt с присвоенным Id, чтобы сохранить RoomId в ответе.
+            return evtForBooking;
         }
         catch (Exception e)
         {
@@ -119,17 +135,38 @@ public class PostgresAppointmentService(
             if (appointment is null) return null;
             mapper.Map(request, appointment);
             context.Appointments.Update(appointment);
+            
             await context.SaveChangesAsync(token);
-            await transaction.CommitAsync(token);
 
+            // Публикация после успешного коммита (outbox временно отключён).
             await publishEndpoint.Publish(new AppointmentUpdatedEvent(
                 AppointmentId: appointment.Id,
                 NewTitle: appointment.Title,
                 OccurredAt: appointment.Slot.Start.ToDateTimeUtc()), token);
-                
+
+            // Update = каскадное удаление старых бронирований + публикация новых команд.
+            // Сначала просим Booking API удалить все бронирования этого события.
+            await publishEndpoint.Publish(new DeleteBookingsByEventIdCommand(appointment.Id), context =>
+            {
+                context.MessageId = DeterministicDeleteMessageId(appointment.Id);
+            }, token);
+
+            // Затем публикуем новые команды бронирования (если указан RoomId).
+            var dtoForBooking = new AppointmentDto
+            {
+                Id = appointment.Id.ToString(),
+                UserId = appointment.UserId,
+                Title = appointment.Title,
+                RoomId = request.RoomId
+            };
+            await bookingPublisher.PublishForAppointmentAsync(dtoForBooking, appointment.Slot, token);
+
+            await context.SaveChangesAsync(token);
+            await transaction.CommitAsync(token);
+            
             logger.LogInformation("Обновлено событие: ID={AppointmentId}, Title='{Title}', UserId={UserId}",
                 appointment.Id, appointment.Title, appointment.UserId);
-            
+
             return mapper.Map<AppointmentDto>(appointment);
         }
         catch (Exception e)
@@ -151,22 +188,31 @@ public class PostgresAppointmentService(
             if(appointment is null) return false;
 
             context.Appointments.Remove(appointment);
+            
             await context.SaveChangesAsync(token);
 
-            await transaction.CommitAsync(token);
-
+            // Публикация после успешного коммита (outbox временно отключён).
             await publishEndpoint.Publish(new AppointmentDeletedEvent(
                 AppointmentId: appointment.Id,
                 UserId: appointment.UserId,
                 OccurredAt: appointment.Slot.Start.ToDateTimeUtc()), token);
 
+            // Каскадное удаление связанных бронирований в Booking API.
+            await publishEndpoint.Publish(new DeleteBookingsByEventIdCommand(appointment.Id), context =>
+            {
+                context.MessageId = DeterministicDeleteMessageId(appointment.Id);
+            }, token);
+
+            await context.SaveChangesAsync(token);
+            await transaction.CommitAsync(token);
+            
             logger.LogInformation("Удалено событие: ID={AppointmentId}", id);
 
             return true;
         }
         catch (Exception e)
         {
-            try { await transaction.RollbackAsync(token); } catch { }
+            await transaction.RollbackAsync(token);
             logger.LogError(e, "Ошибка при удалении события {AppointmentId}", id);
             throw;
         }
@@ -179,4 +225,32 @@ public class PostgresAppointmentService(
             .Where(e => e.MasterAppointmentId == masterId)
             .ToListAsync(token);
     }
+
+    /// <summary>
+    /// Детерминированный MessageId для команды удаления бронирований события,
+    /// чтобы повторная доставка дедуплицировалась в Booking API.
+    /// </summary>
+    private static Guid DeterministicDeleteMessageId(Guid appointmentId)
+    {
+        var payload = $"{appointmentId}:delete";
+        var payloadBytes = Encoding.UTF8.GetBytes(payload);
+        var namespaceBytes = BookingPublisherMessageIdNamespace.ToByteArray();
+
+        Span<byte> hashInput = stackalloc byte[namespaceBytes.Length + payloadBytes.Length];
+        namespaceBytes.CopyTo(hashInput);
+        payloadBytes.CopyTo(hashInput[namespaceBytes.Length..]);
+
+        Span<byte> hash = stackalloc byte[20];
+        SHA1.HashData(hashInput, hash);
+
+        var result = hash[..16].ToArray();
+        result[6] = (byte)((result[6] & 0x0F) | 0x50); // version 5
+        result[8] = (byte)((result[8] & 0x3F) | 0x80); // variant
+
+        return new Guid(result);
+    }
+
+    /// <summary>Тот же namespace, что в <see cref="BookingPublisher"/> — для согласованности MessageId.</summary>
+    private static readonly Guid BookingPublisherMessageIdNamespace =
+        new("a4b6c8d0-1234-4abc-9def-000000000001");
 }

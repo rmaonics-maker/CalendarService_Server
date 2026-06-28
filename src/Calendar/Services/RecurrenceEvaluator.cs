@@ -54,27 +54,57 @@ public class RecurrenceEvaluator : IRecurrenceEvaluator
 
     private List<Instant> ExpandRule(Appointment master, TimeSlot range)
     {
-        if (string.IsNullOrWhiteSpace(master.Recurrence?.RRule))
+        return ExpandInstants(master.Slot, master.Recurrence != null
+            ? new RecurrencePatternDto(master.Recurrence.RRule, master.Recurrence.Until, master.Recurrence.Count)
+            : null, range.Start, range.End, int.MaxValue);
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<TimeSlot> ExpandOccurrences(
+        TimeSlot masterSlot,
+        RecurrencePatternDto? recurrence,
+        Instant from,
+        Instant to,
+        int maxOccurrences)
+    {
+        var duration = masterSlot.End - masterSlot.Start;
+        var instants = ExpandInstants(masterSlot, recurrence, from, to, maxOccurrences);
+
+        return instants
+            .Select(start => new TimeSlot(start, start.Plus(duration)))
+            .ToList();
+    }
+
+    private List<Instant> ExpandInstants(
+        TimeSlot masterSlot,
+        RecurrencePatternDto? recurrence,
+        Instant from,
+        Instant to,
+        int maxOccurrences)
+    {
+        if (recurrence is null || string.IsNullOrWhiteSpace(recurrence.RRule))
         {
-            return (master.Slot.Start >= range.Start && master.Slot.Start <= range.End)
-                ? new List<Instant> { master.Slot.Start }
+            // Неповторяющееся событие — одно вхождение, если попадает в диапазон.
+            return (masterSlot.Start >= from && masterSlot.Start <= to)
+                ? new List<Instant> { masterSlot.Start }
                 : new List<Instant>();
         }
 
         var calendar = new Ical.Net.Calendar();
         var calendarEvent = new CalendarEvent
         {
-            Start = new CalDateTime(master.Slot.Start.ToDateTimeUtc())
+            Start = new CalDateTime(masterSlot.Start.ToDateTimeUtc())
         };
 
-        calendarEvent.RecurrenceRules.Add(new Ical.Net.DataTypes.RecurrencePattern(master.Recurrence.RRule));
+        calendarEvent.RecurrenceRules.Add(new Ical.Net.DataTypes.RecurrencePattern(recurrence.RRule));
         calendar.Events.Add(calendarEvent);
 
-        var searchStart = new CalDateTime(range.Start.ToDateTimeUtc());
-        var searchEndUtc = range.End.ToDateTimeUtc();
+        var searchStart = new CalDateTime(from.ToDateTimeUtc());
+        var searchEndUtc = to.ToDateTimeUtc();
 
         return calendar.GetOccurrences(searchStart)
             .TakeWhile(occ => occ.Period.StartTime.AsUtc <= searchEndUtc)
+            .Take(maxOccurrences)
             .Select(occ => Instant.FromDateTimeUtc(occ.Period.StartTime.AsUtc))
             .ToList();
     }

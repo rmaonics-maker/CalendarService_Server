@@ -104,7 +104,9 @@ public class Program
                     .AddOtlpExporter();
             })
             .WithMetrics(providerBuilder => providerBuilder
+                .ConfigureResource(r => r.AddService("Calendar.Worker"))
                 .AddMeter(Instrumentation.MeterName)
+                .AddMeter("MassTransit")
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
                 .AddRuntimeInstrumentation()

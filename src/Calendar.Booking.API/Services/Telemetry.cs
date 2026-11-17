@@ -22,9 +22,12 @@ public static class Telemetry
         Meter.CreateHistogram<double>(
             "booking.creation.duration", "ms", "Полное время создания бронирования");
 
+    // Имена инструментов — без "_total" в конце и без юнита "count": иначе OTel Prometheus
+    // exporter и Prometheus 3 навешивают суффиксы дважды (booking_created_total_count_total)
+    // и нормализуют их по-разному, из-за чего дашборд ловит No data.
     public static readonly Counter<long> BookingsCreatedCounter = Meter.CreateCounter<long>(
-        "booking_created_total", "count", "Total number of bookings created");
+        "bookings_created", description: "Total number of bookings created");
 
     public static readonly Counter<long> BookingConflictCounter = Meter.CreateCounter<long>(
-        "booking_conflict_total", "count", "Total number of booking conflicts (Double Booking)");
+        "booking_conflicts", description: "Total number of booking conflicts (Double Booking)");
 }

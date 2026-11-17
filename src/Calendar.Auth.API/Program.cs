@@ -119,6 +119,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 
 builder.Services.AddControllers();
 builder.Services.AddAuthorization();
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
@@ -127,8 +128,9 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseAuthentication(); 
-app.UseAuthorization();  
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapHealthChecks("/health");
 app.MapPrometheusScrapingEndpoint();
 app.MapControllers();
 
@@ -147,12 +149,19 @@ using (var scope = app.Services.CreateScope())
     }
 
     // Б) Создаем тестового пользователя
+    // Id фиксированный и совпадает с сидом в Calendar/Program.cs: JWT sub должен
+    // находить того же юзера в calendar_db, иначе events ловит FK violation.
     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     var adminEmail = "admin@calendar.com";
     var adminUser = await userManager.FindByEmailAsync(adminEmail);
     if (adminUser == null)
     {
-        adminUser = new ApplicationUser { UserName = adminEmail, Email = adminEmail };
+        adminUser = new ApplicationUser
+        {
+            Id = "71ab3b0a-a75b-4ef3-b73f-37d4e66dd2b2",
+            UserName = adminEmail,
+            Email = adminEmail
+        };
         await userManager.CreateAsync(adminUser, "Password123!");
         await userManager.AddToRoleAsync(adminUser, "Admin");
     }

@@ -96,7 +96,9 @@ builder.Services.AddOpenTelemetry()
             .AddOtlpExporter();
     })
     .WithMetrics(providerBuilder => providerBuilder
+        .ConfigureResource(r => r.AddService("Calendar.Api"))
         .AddMeter(Instrumentation.MeterName)
+        .AddMeter("MassTransit")
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
         .AddRuntimeInstrumentation()

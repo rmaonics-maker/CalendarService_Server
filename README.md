@@ -56,6 +56,23 @@ docker-compose -f Infrastructure/docker-compose.yml up --build
 - Grafana — `http://localhost:3000` (admin/admin)
 - RabbitMQ management — `http://localhost:15672`
 
+## Нагрузочное демо
+
+Одна команда поднимает контур, гоняет ~2 минуты нагрузки через NBomber и ставит аннотации в Grafana:
+
+```bash
+./Infrastructure/run-demo.sh
+```
+
+Дашборд открывается сам по адресу `http://localhost:3000/d/calendar-loadtest` (провижинится автоматически, admin/admin; при самом первом входе Grafana попросит сменить пароль — жмём Skip). Что смотреть, пока нагрузка идёт:
+
+- **Request Rate / Status Codes** — ровные 50 rps от сценария `steady_load` и красные всплески 409 от `contention_bursts`;
+- **Bookings Created vs Conflicts** — сотня одновременных бронирований одного слота: 1×201, остальные 409, ни одного двойного бронирования;
+- **Redis RedLock / Lock Wait** — как раз та гонка, только изнутри: один захватил блокировку, остальные ждали и получили отказ;
+- **Appointments / Notifications / MassTransit** — асинхронная цепочка Postgres → RabbitMQ → Booking → уведомления.
+
+Нагрузка настраивается env-переменными: `LOADTEST_DEMO_RATE`, `LOADTEST_DEMO_SECONDS`, `LOADTEST_DEMO_BURSTS`, `LOADTEST_BURST_SIZE` (полный набор — в `tests/Calendar.LoadTests/Program.cs`). Короткий прогон без Grafana — `dotnet run --project tests/Calendar.LoadTests`; HTML-отчёт NBomber ложится в `results/`.
+
 ## Сборка и тесты
 
 ```bash

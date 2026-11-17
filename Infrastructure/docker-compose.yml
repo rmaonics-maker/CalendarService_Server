@@ -78,6 +78,9 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
+    # containerd image store в Docker Desktop кладёт .erlang.cookie в анонимный том
+    # с владельцем root:root, и демон под юзером rabbitmq падает с eacces — чиним владельца перед стартом
+    entrypoint: ["/bin/sh", "-c", "chown rabbitmq:rabbitmq /var/lib/rabbitmq/.erlang.cookie 2>/dev/null; exec docker-entrypoint.sh rabbitmq-server"]
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBIT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBIT_PASS}
@@ -111,12 +114,8 @@ services:
     build:
       context: ..
       dockerfile: src/Calendar.Booking.API/Dockerfile
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    # контейнерный healthcheck для .NET-сервисов невозможен: chiseled-образы без shell и curl —
+    # здоровье проверяем снаружи (run-demo.sh ждёт HTTP, мониторит Prometheus)
     container_name: calendar-booking-api-1
     environment:
       ConnectionStrings__DefaultConnection: "Host=${BOOKING_DB_HOST};Port=5432;Database=${BOOKING_DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
@@ -144,12 +143,6 @@ services:
     build:
       context: ..
       dockerfile: src/Calendar/Dockerfile
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     container_name: calendar-api-1
     environment:
       ASPNETCORE_ENVIRONMENT: Development
@@ -180,12 +173,6 @@ services:
     build:
       context: ..
       dockerfile: src/NotificationService/Dockerfile
-    healthcheck:
-      test: ["CMD-SHELL", "pgrep -f dotnet || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     container_name: calendar-worker-1
     environment:
       RabbitMq__Host: ${RABBIT_HOST}
@@ -207,12 +194,6 @@ services:
     build:
       context: ..
       dockerfile: src/Calendar.Auth.API/Dockerfile
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     container_name: calendar-auth-api-1
     environment:
       ASPNETCORE_ENVIRONMENT: Development
@@ -266,6 +247,11 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/calendar-loadtest.json
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
     depends_on:
       - prometheus
     networks:
@@ -274,6 +260,9 @@ services:
 networks:
   calendar-net:
     driver: bridge
+
+volumes:
+  grafana-data:
 
 secrets:
   db_password_secret:
